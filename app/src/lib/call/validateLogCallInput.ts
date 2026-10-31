@@ -2,7 +2,8 @@
  * Runtime check of a logCall input (server actions are publicly callable and
  * TS types are erased). Returns a clean copy with only the known fields, or
  * throws "[validateLogCallInput] validate <field> failed: ...". Whether the ids
- * belong to the workspace is checked by the log_call database function.
+ * belong to the workspace is checked by the log_call database function. Safe in
+ * the browser too: buildPayload runs it before an outcome is queued.
  */
 import { LANG_CODES, type LangCode, type Mix } from '@/lib/domain'
 import { PROCESS_CATEGORIES } from '@/lib/discovery/taxonomy'
@@ -18,7 +19,7 @@ import {
 } from './logCallInput'
 
 const MODULE = 'validateLogCallInput'
-const MAX_DURATION_SECONDS = 4 * 60 * 60
+export const MAX_DURATION_SECONDS = 4 * 60 * 60
 const MAX_REASON_LENGTH = 500
 const MAX_TOOL_LENGTH = 200
 const MAX_QUOTE_LENGTH = 2000

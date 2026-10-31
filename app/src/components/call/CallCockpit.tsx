@@ -14,6 +14,7 @@ import type { OutboxOp } from '@/lib/offline/outbox'
 import { useOutbox } from '@/lib/offline/useOutbox'
 import { LeadCallFlow } from './LeadCallFlow'
 import { OutboxStatus } from './OutboxStatus'
+import { RefusedOutcomes } from './RefusedOutcomes'
 
 export interface CallCockpitProps {
   workspaceId: string
@@ -41,11 +42,8 @@ export function CallCockpit({ workspaceId, screen }: CallCockpitProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <OutboxStatus
-        count={outbox.waiting.length}
-        stuck={outbox.stuck}
-        onDiscard={() => void outbox.discardOldest()}
-      />
+      <OutboxStatus count={outbox.waiting.length} stuck={outbox.stuck} />
+      <RefusedOutcomes letters={outbox.refused} onRemove={(clientId) => void outbox.removeRefused(clientId)} />
       {lead ? (
         <LeadCallFlow key={lead.companyId} lead={lead} objections={screen.objections} onSubmit={submit} />
       ) : screen.moreWaiting ? (

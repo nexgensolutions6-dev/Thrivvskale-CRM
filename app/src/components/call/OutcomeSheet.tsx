@@ -4,20 +4,24 @@
  * The sheet that opens after a call: outcome buttons, call length, mix spoken,
  * optional pain point, objections or lost reason, and the next action pre-filled
  * from the next working slot. Builds one LogCallInput with one clientId, so a
- * double tap stays one call. "Didn't call" logs nothing. Used by LeadCallFlow.
+ * double tap stays one call. buildPayload checks it before it is queued. "Didn't
+ * call" logs nothing. Used by LeadCallFlow.
  */
 import { useEffect, useRef, useState } from 'react'
 import { Surface } from '@/components/glass/Surface'
 import { BUTTON, FIELD, MUTED } from '@/components/lead/styles'
 import type { CallLead, CallObjection, CallPoint } from '@/lib/call/callScreen'
+import { buildPayload, usableEstimate } from '@/lib/call/buildPayload'
 import { defaultNextActionType } from '@/lib/call/defaultNextAction'
-import { fromLocalInput, toLocalInput } from '@/lib/call/localDateTime'
-import { OUTCOMES, type LogCallInput, type NextActionType } from '@/lib/call/logCallInput'
+import { toLocalInput } from '@/lib/call/localDateTime'
+import { OUTCOMES, type NextActionType } from '@/lib/call/logCallInput'
 import { OUTCOME_LABELS } from '@/lib/call/outcomeLabels'
 import type { Mix, Outcome } from '@/lib/domain'
 import type { OutboxOp } from '@/lib/offline/outbox'
 import { MixChips } from './MixChips'
 import { EMPTY_PAIN_DRAFT, PainPointForm, toPainPoint } from './PainPointForm'
+
+const MODULE = 'OutcomeSheet'
 
 export interface OutcomeSheetProps {
   lead: CallLead
@@ -26,14 +30,15 @@ export interface OutcomeSheetProps {
   /** Seconds estimated from time away; null when the sheet was opened by hand. */
   estimatedSeconds: number | null
   objections: CallObjection[]
-  /** A voice note is recording; saving now would cut it off. */
-  saveBlocked: boolean
+  /** Why saving must wait for the voice note, or null. Saving now would lose the note. */
+  saveBlock: string | null
   onCancel: () => void
   onSubmit: (op: OutboxOp) => Promise<void>
 }
 
 export function OutcomeSheet(props: OutcomeSheetProps) {
-  const { lead, point, openerId, estimatedSeconds, objections, saveBlocked, onCancel, onSubmit } = props
+  const { lead, point, openerId, objections, saveBlock, onCancel, onSubmit } = props
+  const estimatedSeconds = usableEstimate(props.estimatedSeconds)
   const [clientId] = useState(() => crypto.randomUUID())
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [seconds, setSeconds] = useState(estimatedSeconds === null ? '' : String(estimatedSeconds))
@@ -56,40 +61,34 @@ export function OutcomeSheet(props: OutcomeSheetProps) {
     setError(null)
   }
 
-  function buildPayload(chosen: Outcome): LogCallInput | null {
-    const dueAt = nextType === null ? null : fromLocalInput(nextDue)
-    if (nextType !== null && dueAt === null) {
-      setError('Choose a date for the next action.')
-      return null
-    }
-    const durationSeconds = seconds.trim() === '' ? null : Number(seconds)
-    return {
+  async function save() {
+    if (outcome === null) return
+    const built = buildPayload({
       clientId,
       companyId: lead.companyId,
       contactPointId: point.id,
-      outcome: chosen,
-      durationSeconds,
-      durationIsEstimate: durationSeconds !== null && isEstimate,
-      mixUsed: mix,
+      outcome,
+      secondsText: seconds,
+      isEstimate,
+      mix,
       objectionIds,
-      lostReason: chosen === 'not_interested' ? lostReason : undefined,
-      openerId: openerId ?? undefined,
+      lostReason,
+      openerId,
       painPoint: toPainPoint(pain),
-      nextAction: nextType !== null && dueAt !== null ? { type: nextType, dueAt } : undefined,
-      occurredAt: new Date().toISOString(),
+      nextType,
+      nextDueLocal: nextDue,
+      now: new Date(),
+    })
+    if (!built.ok) {
+      setError(built.message)
+      return
     }
-  }
-
-  async function save() {
-    if (outcome === null) return
-    const payload = buildPayload(outcome)
-    if (payload === null) return
     setSaving(true)
     setError(null)
     try {
-      await onSubmit({ clientId, type: 'logCall', payload })
+      await onSubmit({ clientId, type: 'logCall', companyName: lead.name, payload: built.payload })
     } catch (failure) {
-      console.error(`[OutcomeSheet] save the outcome for "${lead.name}" failed`, failure)
+      console.error(`[${MODULE}] save the outcome for "${lead.name}" failed`, failure)
       setError('The outcome could not be saved. Try again.')
       setSaving(false)
     }
@@ -195,14 +194,14 @@ export function OutcomeSheet(props: OutcomeSheetProps) {
         </div>
       )}
 
-      {saveBlocked && <p className="text-sm">Finish the voice note before saving.</p>}
+      {saveBlock && <p className="text-sm">{saveBlock}</p>}
       {error && <p role="alert" className="break-words text-sm">{error}</p>}
 
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
           className={BUTTON}
-          disabled={outcome === null || saving || saveBlocked}
+          disabled={outcome === null || saving || saveBlock !== null}
           onClick={() => void save()}
         >
           {saving ? 'Saving...' : 'Save outcome'}

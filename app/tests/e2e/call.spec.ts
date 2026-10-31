@@ -2,7 +2,8 @@
  * End-to-end checks of the calling cockpit (Task 15): top lead shown, return
  * from the dialer opens the outcome sheet, a return under 5 seconds does not,
  * "Didn't call" logs nothing, Callback logs and advances, offline outcomes sync
- * on reconnect, the empty queue, the QR fallback and voice notes. Local stack only.
+ * on reconnect, refused outcomes, an expired session during a flush, the empty
+ * queue, the QR fallback and voice notes with the save guard. Local stack only.
  */
 import { randomUUID } from 'node:crypto'
 import { expect, test, type Page } from '@playwright/test'
@@ -67,6 +68,25 @@ async function callOutcomes(companyId: string): Promise<string[]> {
   const ids = (activities.data ?? []).map((row) => row.id)
   const calls = await admin().from('calls').select('outcome').in('activity_id', ids)
   return (calls.data ?? []).map((row) => row.outcome)
+}
+
+/** How many rows the browser's outbox holds. Read directly, as the page may have moved on. */
+async function storedCounts(page: Page, workspaceId: string): Promise<{ ops: number; deadLetters: number }> {
+  return page.evaluate(async (name) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(name)
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+    const count = (store: string) => new Promise<number>((resolve, reject) => {
+      const request = db.transaction(store).objectStore(store).count()
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+    const counts = { ops: await count('ops'), deadLetters: await count('dead-letters') }
+    db.close()
+    return counts
+  }, `thrivvskale-outbox-${workspaceId}`)
 }
 
 /** Stops the tel: link from leaving the page, so the click only starts the "away" timer. */
@@ -180,6 +200,84 @@ test('offline, the outcome is queued and reaches the server on reconnect', async
   await expect(page.getByTestId('outbox-status')).toHaveCount(0)
 })
 
+test('a refused outcome is set aside by name, the queue flows, and only a named confirm removes it', async ({
+  page,
+}) => {
+  const { ids } = await setUp(page, 2)
+  await openCockpit(page)
+  await pressCallThenReturn(page, AWAY_MS)
+  const sheet = page.getByRole('dialog')
+  await sheet.getByRole('button', { name: 'Interested', exact: true }).click()
+
+  // The number disappears after the lead was loaded, so the server will refuse this for good.
+  const removed = await admin().from('contact_points').delete().eq('company_id', ids[0])
+  if (removed.error) throw new Error(`[call.spec] delete number failed: ${removed.error.message}`)
+  await sheet.getByRole('button', { name: 'Save outcome' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Second Lead' })).toBeVisible()
+  const refused = page.getByTestId('refused-outcomes')
+  await expect(refused).toContainText('First Lead: Interested')
+  await expect(refused).toContainText('is not its number')
+  await expect(page.getByTestId('outbox-status')).toHaveCount(0)
+  expect(await callOutcomes(ids[0])).toEqual([])
+
+  const questions: string[] = []
+  page.once('dialog', (dialog) => {
+    questions.push(dialog.message())
+    void dialog.dismiss()
+  })
+  await refused.getByRole('button', { name: 'Remove' }).click()
+  await expect(refused).toBeVisible()
+  expect(questions[0]).toMatch(/Interested.*First Lead/)
+
+  page.once('dialog', (dialog) => void dialog.accept())
+  await refused.getByRole('button', { name: 'Remove' }).click()
+  await expect(refused).toHaveCount(0)
+})
+
+test('an expired session during a flush keeps the outcome queued and it sends after signing back in', async ({
+  page,
+  context,
+}) => {
+  const { ids, workspaceId } = await setUp(page, 2)
+  await openCockpit(page)
+  await pressCallThenReturn(page, AWAY_MS)
+  const sheet = page.getByRole('dialog')
+  await sheet.getByRole('button', { name: 'Interested', exact: true }).click()
+
+  const cookies = await context.cookies()
+  await context.clearCookies()
+  await sheet.getByRole('button', { name: 'Save outcome' }).click()
+  await expect.poll(() => storedCounts(page, workspaceId)).toEqual({ ops: 1, deadLetters: 0 })
+  expect(await callOutcomes(ids[0])).toEqual([])
+
+  await context.addCookies(cookies)
+  await page.goto('/call')
+  await expect.poll(() => callOutcomes(ids[0]), { timeout: 20_000 }).toEqual(['interested'])
+  await expect.poll(() => storedCounts(page, workspaceId)).toEqual({ ops: 0, deadLetters: 0 })
+})
+
+test('a guess over 4 hours is dropped and a bad typed length stays in the sheet', async ({ page }) => {
+  const { ids } = await setUp(page, 2)
+  await openCockpit(page)
+  await pressCallThenReturn(page, 5 * 60 * 60 * 1000)
+
+  const sheet = page.getByRole('dialog')
+  await expect(sheet.getByLabel(/Call length/)).toHaveValue('')
+  await expect(sheet.getByText('Estimated from time away')).toHaveCount(0)
+  await sheet.getByRole('button', { name: 'Busy', exact: true }).click()
+
+  await sheet.getByLabel(/Call length/).fill('-1')
+  await sheet.getByRole('button', { name: 'Save outcome' }).click()
+  await expect(sheet.getByRole('alert')).toContainText('Call length must be a whole number')
+  expect(await callOutcomes(ids[0])).toEqual([])
+
+  await sheet.getByLabel(/Call length/).fill('')
+  await sheet.getByRole('button', { name: 'Save outcome' }).click()
+  await expect(page.getByRole('heading', { name: 'Second Lead' })).toBeVisible()
+  await expect.poll(() => callOutcomes(ids[0])).toEqual(['busy'])
+})
+
 test('an empty queue says All caught up', async ({ page }) => {
   await setUp(page, 0)
   await page.goto('/call')
@@ -213,5 +311,26 @@ test.describe('voice notes', () => {
     expect(activity.data?.metadata).toMatchObject({ storagePath: `${workspaceId}/${activity.data?.id}.webm` })
     const file = await admin().storage.from('voice-notes').download(`${workspaceId}/${activity.data?.id}.webm`)
     expect(file.data?.size).toBeGreaterThan(0)
+  })
+
+  test('an unsent note blocks saving the outcome until it is discarded', async ({ page, context }) => {
+    await setUp(page, 2)
+    await page.goto('/call')
+    await page.getByRole('button', { name: 'Record voice note' }).click()
+    await page.waitForTimeout(1_200)
+    await context.setOffline(true)
+    await page.getByRole('button', { name: 'Stop and save' }).click()
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Log an outcome' }).click()
+    const sheet = page.getByRole('dialog')
+    await sheet.getByRole('button', { name: 'Busy', exact: true }).click()
+    await expect(sheet.getByRole('button', { name: 'Save outcome' })).toBeDisabled()
+    await expect(sheet.getByText('The voice note has not been sent')).toBeVisible()
+
+    page.once('dialog', (dialog) => void dialog.accept())
+    await page.getByRole('button', { name: 'Discard note' }).click()
+    await expect(sheet.getByRole('button', { name: 'Save outcome' })).toBeEnabled()
+    await context.setOffline(false)
   })
 })

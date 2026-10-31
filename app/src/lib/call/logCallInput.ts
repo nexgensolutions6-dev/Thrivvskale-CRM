@@ -45,3 +45,8 @@ export type LogCallInput = {
 }
 
 export type LogCallResult = { callId: string; duplicate: boolean }
+
+/** What the logCall action answers. A refusal is permanent; a retryable failure throws instead. */
+export type LogCallOutcome =
+  | ({ ok: true } & LogCallResult)
+  | { ok: false; refused: true; reason: string }

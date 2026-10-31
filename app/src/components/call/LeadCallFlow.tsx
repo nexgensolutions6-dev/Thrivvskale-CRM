@@ -9,6 +9,7 @@ import { useCallback, useState } from 'react'
 import { Surface } from '@/components/glass/Surface'
 import type { CallLead, CallObjection } from '@/lib/call/callScreen'
 import { useCallReturn } from '@/lib/call/useCallReturn'
+import { voiceNoteSaveBlock, type VoiceNoteStage } from '@/lib/call/voiceNoteGuard'
 import type { OutboxOp } from '@/lib/offline/outbox'
 import { CallCard } from './CallCard'
 import { OutcomeSheet } from './OutcomeSheet'
@@ -26,7 +27,7 @@ export function LeadCallFlow({ lead, objections, onSubmit }: LeadCallFlowProps) 
   const [pointId, setPointId] = useState(lead.points[0].id)
   const [openerId, setOpenerId] = useState<string | null>(lead.openers[0]?.id ?? null)
   const [sheet, setSheet] = useState<Sheet | null>(null)
-  const [recording, setRecording] = useState(false)
+  const [voiceStage, setVoiceStage] = useState<VoiceNoteStage>('idle')
   const point = lead.points.find((option) => option.id === pointId) ?? lead.points[0]
 
   const openWithEstimate = useCallback((seconds: number) => setSheet({ estimatedSeconds: seconds }), [])
@@ -41,7 +42,7 @@ export function LeadCallFlow({ lead, objections, onSubmit }: LeadCallFlowProps) 
           openerId={openerId}
           estimatedSeconds={sheet.estimatedSeconds}
           objections={objections}
-          saveBlocked={recording}
+          saveBlock={voiceNoteSaveBlock(voiceStage)}
           onCancel={() => setSheet(null)}
           onSubmit={onSubmit}
         />
@@ -59,7 +60,7 @@ export function LeadCallFlow({ lead, objections, onSubmit }: LeadCallFlowProps) 
         />
       )}
       <Surface level="L2" className="p-4">
-        <VoiceNoteButton companyId={lead.companyId} onRecordingChange={setRecording} />
+        <VoiceNoteButton companyId={lead.companyId} onStageChange={setVoiceStage} />
       </Surface>
     </div>
   )

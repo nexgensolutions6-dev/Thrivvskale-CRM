@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { LogCallInput } from '@/lib/call/logCallInput'
 import { logCallInWorkspace } from '@/lib/call/logCallInWorkspace'
+import { refusalReason } from '@/lib/call/logCallRefusal'
 import { loadCallScreen } from '@/lib/call/loadCallScreen'
 import { loadQueueItems } from '@/lib/call/loadQueueItems'
 import { saveVoiceNote } from '@/lib/call/saveVoiceNote'
@@ -248,6 +249,18 @@ describe('logCallInWorkspace', () => {
       .insert({ workspace_id: user.workspaceId, kind: 'opener', body: 'Hi', company_id: other.companyId })
       .select('id').single()
     await expect(log(callInput(lead, { openerId: opener.data?.id }))).rejects.toThrow(/opener/)
+  })
+
+  it('classes real ownership failures as refusals, naming the check', async () => {
+    const lead = await addLead(user, 'Refused Co')
+    const other = await addLead(user, 'Other Refused Co')
+    const theirs = await addLead(stranger, 'Stranger Refused Co')
+    const reasonOf = (input: LogCallInput) => log(input).then(() => null, refusalReason)
+
+    expect(await reasonOf(callInput(lead, { contactPointId: other.pointId }))).toMatch(/Refused Co/)
+    expect(await reasonOf(callInput(lead, { openerId: randomUUID() }))).toMatch(/\[log_call\] check opener/)
+    expect(await reasonOf(callInput(theirs))).toMatch(/not found/)
+    expect(await reasonOf({ ...callInput(lead), durationSeconds: -1 })).toMatch(/durationSeconds/)
   })
 
   it('blocks the database function for a workspace the caller is not in', async () => {
