@@ -11,6 +11,7 @@ import { stepError } from '@/lib/step-error'
 import { loadExamples } from './loadExamples'
 import { toMixText } from './mixText'
 import { rewriteVariant } from './rewrite.server'
+import { validateRewriteInput } from './validateRewriteInput'
 
 const MODULE = 'createDraft'
 
@@ -23,6 +24,7 @@ export async function createDraft(
   register: Register,
   client?: Pick<Anthropic, 'messages'>,
 ): Promise<{ variantId: string }> {
+  validateRewriteInput(variantId, mix, script, register)
   const parent = await db
     .from('content_variants')
     .select('kind, vertical, stage, body')
