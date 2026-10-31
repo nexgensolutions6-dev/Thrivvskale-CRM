@@ -65,4 +65,20 @@ test.describe('Import screen', () => {
 
     await expect(page.getByRole('alert').filter({ hasText: 'not a CSV file' })).toContainText('not a CSV file')
   })
+
+  test('refuses a file over the size limit with a clear message, before sending it', async ({ page }) => {
+    await signIn(page, email)
+
+    await page.goto('/more/import')
+    await page.getByLabel('Lead CSV file').setInputFiles({
+      name: 'huge.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.alloc(3_000_000, 'a'),
+    })
+
+    const message = page.getByRole('alert').filter({ hasText: 'is too large' })
+    await expect(message).toContainText('"huge.csv" is too large')
+    await page.getByRole('button', { name: 'Preview' }).click()
+    await expect(message).toContainText('is too large')
+  })
 })

@@ -7,10 +7,13 @@
  * read exactly the same file.
  */
 import { useState, useTransition } from 'react'
+import { oversizeMessage } from '@/lib/import/uploadLimit'
 import { importUpload, previewUpload } from './actions'
 import type { ImportActionResult } from './import-result'
 
 type Stage = 'choose' | 'previewed' | 'imported'
+
+const UPLOAD_FAILED = 'The upload failed. Try a smaller file, or try again.'
 
 export function ImportForm() {
   const [file, setFile] = useState<File | null>(null)
@@ -20,19 +23,30 @@ export function ImportForm() {
 
   function run(action: typeof previewUpload, nextStage: Stage) {
     if (!file) return
+    const tooLarge = oversizeMessage(file)
+    if (tooLarge) {
+      setResult({ ok: false, message: tooLarge })
+      return
+    }
+
     const form = new FormData()
     form.set('file', file)
     startTransition(async () => {
-      const outcome = await action(form)
-      setResult(outcome)
-      if (outcome.ok) setStage(nextStage)
+      try {
+        const outcome = await action(form)
+        setResult(outcome)
+        if (outcome.ok) setStage(nextStage)
+      } catch {
+        setResult({ ok: false, message: UPLOAD_FAILED })
+      }
     })
   }
 
   function chooseFile(chosen: File | null) {
     setFile(chosen)
     setStage('choose')
-    setResult(null)
+    const tooLarge = chosen ? oversizeMessage(chosen) : null
+    setResult(tooLarge ? { ok: false, message: tooLarge } : null)
   }
 
   return (

@@ -6,9 +6,9 @@
  */
 import { mapLeadRow, type MappedLead } from '@/lib/import/mapLeadRow'
 import { parseLeadsCsv } from '@/lib/import/parseLeadsCsv'
+import { MAX_UPLOAD_BYTES, oversizeMessage } from '@/lib/import/uploadLimit'
 
-/** The real file is about 300 KB; this leaves room to grow and stays under the action's body limit. */
-export const MAX_UPLOAD_BYTES = 1_500_000
+export { MAX_UPLOAD_BYTES }
 
 export interface LeadUpload {
   fileName: string
@@ -23,9 +23,8 @@ export async function readLeadUpload(form: FormData): Promise<LeadUpload> {
     throw new Error(`"${file.name}" is not a CSV file. Export your leads as .csv and try again.`)
   }
   if (file.size === 0) throw new Error(`"${file.name}" is empty.`)
-  if (file.size > MAX_UPLOAD_BYTES) {
-    throw new Error(`"${file.name}" is too large (limit ${MAX_UPLOAD_BYTES / 1_000_000} MB).`)
-  }
+  const tooLarge = oversizeMessage(file)
+  if (tooLarge) throw new Error(tooLarge)
 
   const rawRows = parseLeadsCsv(await file.text())
   if (rawRows.length === 0) throw new Error(`"${file.name}" has no rows to import.`)
