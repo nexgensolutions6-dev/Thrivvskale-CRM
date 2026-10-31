@@ -481,6 +481,54 @@ isOneToOne: false
           Functions: {
             "is_member":
 { Args: { "ws": string }; Returns: boolean
+                           },
+"search_leads":
+{ Args: { "lim"?: number,"q": string,"ws": string }; Returns: {
+              "area": string | null,
+"base_score": number,
+"city": string | null,
+"country": string | null,
+"created_at": string,
+"description": string | null,
+"dnd": boolean,
+"entry_offer": string | null,
+"google_rating": number | null,
+"google_reviews": number | null,
+"gstin": string | null,
+"id": string,
+"intent_signal": string | null,
+"last_contacted_at": string | null,
+"long_term_opportunity": string | null,
+"name": string,
+"needs_number": boolean,
+"next_action_at": string | null,
+"pan": string | null,
+"parent_company_id": string | null,
+"pincode": string | null,
+"priority": Database["public"]['Enums']["priority"] | null,
+"problem_evidence": string | null,
+"score": number,
+"source": string | null,
+"stage": string,
+"state": string | null,
+"tags": (string)[],
+"tier": Database["public"]['Enums']["tier"],
+"updated_at": string,
+"vertical": string | null,
+"website_invalid": boolean,
+"website_status": string | null,
+"website_url": string | null,
+"workspace_id": string,
+"wrong_number": boolean
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "companies"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"search_match_score":
+{ Args: { "hay": string,"needle": string }; Returns: number
                            }
           }
           Enums: {

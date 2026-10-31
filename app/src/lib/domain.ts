@@ -12,11 +12,19 @@ export type Tier = 'core' | 'exploratory'
 
 export type Priority = 'A' | 'B' | 'C'
 
+/** Who a contact is at the company. Matches the contact_role database enum. */
+export type ContactRole = 'owner' | 'decision_maker' | 'manager' | 'gatekeeper' | 'other'
+
+export const CONTACT_ROLES: readonly ContactRole[] = ['owner', 'decision_maker', 'manager', 'gatekeeper', 'other']
+
 /** WhatsApp reachability of a phone number. Landlines never get a WhatsApp button. */
 export type WaStatus = 'verified' | 'unconfirmed' | 'landline' | 'none'
 
 /** Languages a contact can be spoken to in (ISO 639-1). */
 export type LangCode = 'te' | 'hi' | 'kn' | 'ta' | 'ml' | 'mr' | 'ur' | 'en'
+
+/** Every language code, in the order the database enum lists them. */
+export const LANG_CODES: readonly LangCode[] = ['te', 'hi', 'kn', 'ta', 'ml', 'mr', 'ur', 'en']
 
 /** An ordered set of languages, primary first, e.g. `['te', 'hi', 'en']`. */
 export type Mix = LangCode[]
