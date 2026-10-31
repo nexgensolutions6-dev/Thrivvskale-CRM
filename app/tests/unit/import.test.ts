@@ -94,6 +94,7 @@ describe('mapLeadRow: the Divyank row', () => {
       area: 'SVCIE Balanagar',
       city: 'Hyderabad',
       state: 'Telangana',
+      country: 'India',
       websiteUrl: 'https://divyankindustries.com',
       websiteStatus: 'Own site - failed to load in check',
       websiteInvalid: false,
@@ -132,6 +133,20 @@ describe('mapLeadRow: the Divyank row', () => {
     const lead = mapLeadRow(rowWith({ Description: 'DESCRIPTION-MUST-NOT-APPEAR' }))
 
     expect(JSON.stringify(lead)).not.toContain('DESCRIPTION-MUST-NOT-APPEAR')
+  })
+})
+
+describe('mapLeadRow: country', () => {
+  it('reads the Country column', () => {
+    expect(mapSample(DIVYANK).company.country).toBe('India')
+    expect(mapLeadRow(rowWith({ Country: 'Nepal' })).company.country).toBe('Nepal')
+  })
+
+  it('defaults to India when the Country cell or column is empty', () => {
+    expect(mapLeadRow(rowWith({ Country: '' })).company.country).toBe('India')
+    const withoutColumn = rowWith({})
+    delete withoutColumn.Country
+    expect(mapLeadRow(withoutColumn).company.country).toBe('India')
   })
 })
 

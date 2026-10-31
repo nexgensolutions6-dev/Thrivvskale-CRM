@@ -25,6 +25,7 @@ export interface MappedCompany {
   area: string
   city: string
   state: string
+  country: string
   websiteUrl: string | null
   websiteStatus: string
   websiteInvalid: boolean
@@ -51,6 +52,7 @@ export interface MappedLead {
 }
 
 const MODULE = 'mapLeadRow'
+const DEFAULT_COUNTRY = 'India' // every row of the real file says India
 
 export function mapLeadRow(row: CsvRow): MappedLead {
   try {
@@ -76,6 +78,7 @@ function buildMappedLead(row: CsvRow): MappedLead {
       area: readText(row, 'Area'),
       city: readText(row, 'City'),
       state: readText(row, 'State'),
+      country: readText(row, 'Country') || DEFAULT_COUNTRY,
       websiteUrl,
       websiteStatus: readText(row, 'Website Status'),
       websiteInvalid: isWebsiteInvalid(websiteUrl),
