@@ -5,24 +5,19 @@
  */
 import { randomUUID } from 'node:crypto'
 import { createClient, type SupabaseClientOptions } from '@supabase/supabase-js'
-import { WebSocket } from 'ws'
 import type { Database } from '@/lib/db/types'
+import { nodeWebSocketOptions } from '@/lib/supabase/node-websocket-fallback'
 import { assertLocalStack, localStack, type LocalStack } from '../support/local-stack'
 
 export { assertLocalStack, localStack, type LocalStack }
 
 type ClientOptions = SupabaseClientOptions<'public'>
-type Transport = NonNullable<ClientOptions['realtime']>['transport']
 
-// supabase-js builds a realtime client eagerly and needs a WebSocket
-// constructor. Node 22+ has one built in; on older Node (this project allows
-// Node 20, and the pinned supabase-js 2.109.0 still throws there) fall back to
-// `ws`.
+// `nodeWebSocketOptions` is the app's own WebSocket fallback for Node 20, so
+// the test clients behave like the server clients.
 const CLIENT_OPTIONS: ClientOptions = {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  ...(typeof globalThis.WebSocket === 'undefined'
-    ? { realtime: { transport: WebSocket as unknown as Transport } }
-    : {}),
+  ...nodeWebSocketOptions,
 }
 
 function newClient(stack: LocalStack, key: string) {

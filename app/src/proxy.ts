@@ -13,8 +13,16 @@ import { refreshSession } from '@/lib/supabase/refresh-session'
  *  - every other path: needs a session, otherwise redirect to `/login` and
  *    remember where the visitor was headed in `?next=`.
  *
- * A quick, optimistic check. Server code that touches data re-checks with the
- * auth server through `getSessionWorkspace()`.
+ * Protected paths get a quick, optimistic check (the token verifies). Server
+ * code that touches data re-checks with the auth server through
+ * `getSessionWorkspace()`.
+ *
+ * Redirect loop: a token outlives its user (deleted, banned, signed out
+ * elsewhere) until it expires. The optimistic check still says "signed in", so
+ * `/today` loads, `getSessionWorkspace()` finds the user gone and redirects to
+ * `/login`. If `/login` used the same optimistic check it would send the visitor
+ * straight back to `/today`, and the browser would loop. So `/login` alone asks
+ * the auth server, and a visitor it does not know gets the login form.
  */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
@@ -22,7 +30,9 @@ export async function proxy(request: NextRequest) {
 
   if (isPublicPath(pathname) && !onLoginPage) return NextResponse.next()
 
-  const { response, signedIn } = await refreshSession(request)
+  // Only the login page pays for the auth-server round trip (see "Redirect loop" above).
+  const check = onLoginPage ? 'auth-server' : 'claims'
+  const { response, signedIn } = await refreshSession(request, check)
 
   if (onLoginPage) {
     return signedIn ? redirectKeepingCookies(response, urlForPath(request, DEFAULT_HOME_PATH)) : response

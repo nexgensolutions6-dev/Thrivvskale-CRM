@@ -1,7 +1,8 @@
 /**
  * Gives server-side Supabase clients a WebSocket when Node has none (Node 20).
- * Spread into the options of `server-client.ts`, `refresh-session.ts` and
- * `admin-client.ts`. Server code only: browsers have their own WebSocket.
+ * Spread into the options of `server-client.ts`, `refresh-session.ts`,
+ * `admin-client.ts` and the test helpers in `tests/db/support.ts`. Server code
+ * only: browsers have their own WebSocket.
  */
 import type { SupabaseClientOptions } from '@supabase/supabase-js'
 import { WebSocket as WsWebSocket } from 'ws'
