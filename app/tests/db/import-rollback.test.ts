@@ -60,6 +60,8 @@ describe('importLeads: a failure part-way', () => {
     phoneStep.failNext = true
     await expect(importRows(rows)).rejects.toThrow(/rolled back: 3 new companies removed.*simulated outage/)
     expect(await countCompanies()).toBe(0)
+    const openers = await user.client.from('content_variants').select('*', { count: 'exact', head: true })
+    expect(openers.count).toBe(0)
     const stray = await user.client.from('import_rows').select('*', { count: 'exact', head: true })
     expect(stray.count).toBe(0)
 

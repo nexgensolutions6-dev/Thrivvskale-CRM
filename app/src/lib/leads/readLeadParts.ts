@@ -15,6 +15,7 @@ import type { LeadActivity, LeadContact, LeadOpener, LeadPoint, LeadTask } from 
 const MODULE = 'readLeadParts'
 const TIMELINE_LIMIT = 100
 const OPENER_LIMIT = 200
+const OPENER_COLUMNS = 'id, body, mix, script, register, vertical, company_id'
 const DEFAULT_WORKSPACE_MIX: Mix = ['te', 'hi', 'en']
 
 type Db = SupabaseClient<Database>
@@ -70,24 +71,39 @@ export async function readPoints(scope: LeadScope): Promise<LeadPoint[]> {
   }))
 }
 
-/** Openers written for this company's vertical, plus the ones written for any vertical. */
+/**
+ * This company's own openers (the one from its CSV row), then the generic ones
+ * (no company) written for its vertical or for any vertical. Another company's
+ * opener is never returned. The company's own query has no row limit that could
+ * cut it off; only the generic list is capped.
+ */
 export async function readOpeners(scope: LeadScope, vertical: string | null): Promise<LeadOpener[]> {
-  const result = await scope.db
+  const own = await scope.db
     .from('content_variants')
-    .select('id, body, mix, script, register, vertical')
+    .select(OPENER_COLUMNS)
     .eq('workspace_id', scope.workspaceId)
     .eq('kind', 'opener')
+    .eq('company_id', scope.companyId)
+    .order('created_at')
+  if (own.error) throw fail(scope, 'company openers', own.error)
+  const generic = await scope.db
+    .from('content_variants')
+    .select(OPENER_COLUMNS)
+    .eq('workspace_id', scope.workspaceId)
+    .eq('kind', 'opener')
+    .is('company_id', null)
     .order('created_at')
     .limit(OPENER_LIMIT)
-  if (result.error) throw fail(scope, 'openers', result.error)
-  const fitting = result.data.filter((row) => row.vertical === null || row.vertical === vertical)
-  return fitting.map((row) => ({
+  if (generic.error) throw fail(scope, 'openers', generic.error)
+  const fitting = generic.data.filter((row) => row.vertical === null || row.vertical === vertical)
+  return [...own.data, ...fitting].map((row) => ({
     id: row.id,
     body: row.body,
     mix: parseMixText(row.mix),
     script: row.script,
     register: row.register,
     vertical: row.vertical,
+    companyId: row.company_id,
   }))
 }
 

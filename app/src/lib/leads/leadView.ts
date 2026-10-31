@@ -38,6 +38,8 @@ export interface LeadOpener {
   /** Null when the opener is written for either tone. */
   register: Register | null
   vertical: string | null
+  /** Set when the opener was written for one company (a CSV opener); null for a generic one. */
+  companyId: string | null
 }
 
 export interface LeadTask {

@@ -7,6 +7,7 @@
  * Local Supabase stack only.
  */
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { expect, test, type Page } from '@playwright/test'
 import { adminClient, localStack } from '../db/support'
@@ -14,7 +15,17 @@ import { deleteUserByEmail, signIn } from './sign-in'
 
 const FIXTURE = fileURLToPath(new URL('../fixtures/leads-sample.csv', import.meta.url))
 const MOBILE = { width: 390, height: 844 }
-const OPENER_TEXT = 'Saw you are hiring a telecaller, we can answer first on WhatsApp'
+// Divyank's real CSV opener, read from the fixture: the import must store it, nothing seeds it.
+const DIVYANK_NAME = 'Divyank Industries (Water Purification)'
+const OPENER_TEXT = openerOf(DIVYANK_NAME)
+
+function openerOf(company: string): string {
+  const lines = readFileSync(FIXTURE, 'utf8').split(/\r?\n/)
+  const line = lines.find((candidate) => candidate.includes(company))
+  const match = line?.match(/"(Saw you[^"]*)"/)
+  if (!match) throw new Error(`[lead.spec] no Call Opener for "${company}" in the fixture`)
+  return match[1]
+}
 
 async function expectNoHorizontalScroll(page: Page): Promise<void> {
   const widths = await page.evaluate(() => ({
@@ -53,11 +64,6 @@ async function seedWorkspace(page: Page, email: string): Promise<void> {
 
   const workspaceId = await workspaceIdOf(email)
   const admin = adminClient(localStack())
-  const opener = await admin.from('content_variants').insert({
-    workspace_id: workspaceId, kind: 'opener', mix: 'te+hi+en', body: OPENER_TEXT,
-  })
-  if (opener.error) throw new Error(`[lead.spec] insert opener failed: ${opener.error.message}`)
-
   const defaults = await admin.from('vertical_defaults').select('vertical, entry_offer').eq('workspace_id', workspaceId)
   const withOffer = defaults.data?.find((row) => row.entry_offer)
   if (!withOffer) throw new Error('[lead.spec] the import saved no vertical default offer')
@@ -70,6 +76,11 @@ async function seedWorkspace(page: Page, email: string): Promise<void> {
     workspace_id: workspaceId, name: 'Phones Co', website_url: 'http://localhost/health',
   }).select('id').single()
   if (phones.error) throw new Error(`[lead.spec] insert Phones Co failed: ${phones.error.message}`)
+  // Phones Co is not in the CSV, so it gets its own opener (the WhatsApp link needs one to carry).
+  const phonesOpener = await admin.from('content_variants').insert({
+    workspace_id: workspaceId, company_id: phones.data.id, kind: 'opener', mix: 'te+en', body: 'Namaskaram Suresh garu',
+  })
+  if (phonesOpener.error) throw new Error(`[lead.spec] insert Phones Co opener failed: ${phonesOpener.error.message}`)
   const contact = await admin.from('contacts').insert({
     workspace_id: workspaceId, company_id: phones.data.id, name_latin: 'Suresh', role: 'decision_maker', mix_profile: 'te+en',
   }).select('id').single()
@@ -133,13 +144,14 @@ test.describe('Lead list and workspace', () => {
   })
 
   test('Divyank shows Problem / Evidence, the entry offer and the opener', async ({ page }) => {
-    const id = await companyIdByName(workspaceId, 'Divyank Industries (Water Purification)')
+    const id = await companyIdByName(workspaceId, DIVYANK_NAME)
     await page.goto(`/leads/${id}`)
     await expect(page.getByRole('heading', { name: 'Why call' })).toBeVisible()
     await expect(page.getByText('HIRING 2 telecallers on Apna')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Problem / Evidence' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Entry offer' })).toBeVisible()
     await expect(page.getByTestId('opener-text')).toHaveText(OPENER_TEXT)
+    await expect(page.getByText(openerOf('Abhinav Eye Care Centers'))).toHaveCount(0)
     await expect(page.getByRole('link', { name: /Open .* in Google Maps/ })).toHaveAttribute('href', /google\.com\/maps/)
     await expect(page.getByRole('tab', { name: 'Timeline' })).toBeVisible()
     await page.getByRole('tab', { name: 'Tasks' }).click()
@@ -200,7 +212,7 @@ test.describe('Lead list and workspace', () => {
     await page.setViewportSize(MOBILE)
     await page.goto('/leads')
     await expectNoHorizontalScroll(page)
-    const id = await companyIdByName(workspaceId, 'Divyank Industries (Water Purification)')
+    const id = await companyIdByName(workspaceId, DIVYANK_NAME)
     await page.goto(`/leads/${id}`)
     await expect(page.getByRole('heading', { name: 'Why call' })).toBeVisible()
     await expectNoHorizontalScroll(page)

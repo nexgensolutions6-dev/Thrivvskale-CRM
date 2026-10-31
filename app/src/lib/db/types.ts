@@ -205,17 +205,23 @@ isOneToOne: false
                   ]
                 },"content_variants": {
                   Row: {
-                    "body": string,"created_at": string,"id": string,"kind": Database["public"]['Enums']["content_kind"],"mix": string,"outcome_counts": NonNullable<Json>,"parent_variant_id": string | null,"register": Database["public"]['Enums']["register"] | null,"script": Database["public"]['Enums']["script"],"source": Database["public"]['Enums']["content_source"],"stage": string | null,"updated_at": string,"usage_count": number,"vertical": string | null,"workspace_id": string
+                    "body": string,"company_id": string | null,"created_at": string,"id": string,"kind": Database["public"]['Enums']["content_kind"],"mix": string,"outcome_counts": NonNullable<Json>,"parent_variant_id": string | null,"register": Database["public"]['Enums']["register"] | null,"script": Database["public"]['Enums']["script"],"source": Database["public"]['Enums']["content_source"],"stage": string | null,"updated_at": string,"usage_count": number,"vertical": string | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "body": string,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["content_kind"],"mix"?: string,"outcome_counts"?: NonNullable<Json>,"parent_variant_id"?: string | null,"register"?: Database["public"]['Enums']["register"] | null,"script"?: Database["public"]['Enums']["script"],"source"?: Database["public"]['Enums']["content_source"],"stage"?: string | null,"updated_at"?: string,"usage_count"?: number,"vertical"?: string | null,"workspace_id": string
+                    "body": string,"company_id"?: string | null,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["content_kind"],"mix"?: string,"outcome_counts"?: NonNullable<Json>,"parent_variant_id"?: string | null,"register"?: Database["public"]['Enums']["register"] | null,"script"?: Database["public"]['Enums']["script"],"source"?: Database["public"]['Enums']["content_source"],"stage"?: string | null,"updated_at"?: string,"usage_count"?: number,"vertical"?: string | null,"workspace_id": string
                   }
                   Update: {
-                    "body"?: string,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["content_kind"],"mix"?: string,"outcome_counts"?: NonNullable<Json>,"parent_variant_id"?: string | null,"register"?: Database["public"]['Enums']["register"] | null,"script"?: Database["public"]['Enums']["script"],"source"?: Database["public"]['Enums']["content_source"],"stage"?: string | null,"updated_at"?: string,"usage_count"?: number,"vertical"?: string | null,"workspace_id"?: string
+                    "body"?: string,"company_id"?: string | null,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["content_kind"],"mix"?: string,"outcome_counts"?: NonNullable<Json>,"parent_variant_id"?: string | null,"register"?: Database["public"]['Enums']["register"] | null,"script"?: Database["public"]['Enums']["script"],"source"?: Database["public"]['Enums']["content_source"],"stage"?: string | null,"updated_at"?: string,"usage_count"?: number,"vertical"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "content_variants_company_fkey"
+      columns: ["workspace_id","company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["workspace_id","id"]
+    },{
       foreignKeyName: "content_variants_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false

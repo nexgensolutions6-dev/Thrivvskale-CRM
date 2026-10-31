@@ -16,7 +16,12 @@ import { rankOpeners } from './rankOpeners'
 const DEFAULT_SCRIPT: Script = 'latin'
 const DEFAULT_REGISTER: Register = 'formal'
 
-const MATCH_LABELS = { exact: 'exact mix', primary: 'same main language', english: 'English' } as const
+const MATCH_LABELS = {
+  exact: 'exact mix',
+  primary: 'same main language',
+  english: 'English',
+  company: 'for this lead',
+} as const
 
 export interface PickerOpener {
   id: string

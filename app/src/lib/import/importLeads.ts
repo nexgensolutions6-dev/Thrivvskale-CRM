@@ -6,8 +6,9 @@
  *
  * Not atomic (no transaction over the client). If a step fails, the companies
  * this run inserted are deleted again and the error says so, so a retry cannot
- * double them. Companies it only updated are kept (re-updating is harmless), and
- * an empty import_batches row may remain. If the rollback itself fails, the
+ * double them. New companies take their openers with them (cascade). Companies it
+ * only updated are kept (re-updating is harmless, openers included), and an empty
+ * import_batches row may remain. If the rollback itself fails, the
  * error says so and the new companies may be left without phone numbers.
  */
 import { createFindNumberTasks } from '@/lib/import/findNumberTasks'
@@ -19,6 +20,7 @@ import { rollBackFailedImport } from '@/lib/import/rollBackFailedImport'
 import { saveVerticalDefaults } from '@/lib/import/verticalDefaults'
 import { writeCompanies } from '@/lib/import/writeCompanies'
 import { writeImportRows } from '@/lib/import/writeImportRows'
+import { writeOpeners } from '@/lib/import/writeOpeners'
 import { writePhonePoints } from '@/lib/import/writePhonePoints'
 import { stepError } from '@/lib/step-error'
 
@@ -40,6 +42,7 @@ export async function importLeads(
   const plan = await planImport(db, workspaceId, rows)
   try {
     await writeCompanies(db, workspaceId, plan, defaults)
+    await writeOpeners(db, workspaceId, plan)
     await writePhonePoints(db, workspaceId, plan)
     await createFindNumberTasks(db, workspaceId, plan)
     await writeImportRows(db, workspaceId, plan, rawRows, fileName)

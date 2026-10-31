@@ -27,7 +27,7 @@ export async function createDraft(
   validateRewriteInput(variantId, mix, script, register)
   const parent = await db
     .from('content_variants')
-    .select('kind, vertical, stage, body')
+    .select('kind, vertical, stage, body, company_id')
     .eq('workspace_id', workspaceId)
     .eq('id', variantId)
     .maybeSingle()
@@ -43,6 +43,8 @@ export async function createDraft(
       workspace_id: workspaceId,
       kind: parent.data.kind,
       vertical: parent.data.vertical,
+      // A rewrite of one company's opener stays that company's, so it never joins generic lists.
+      company_id: parent.data.company_id ?? null,
       stage: parent.data.stage,
       mix: toMixText(mix),
       script,

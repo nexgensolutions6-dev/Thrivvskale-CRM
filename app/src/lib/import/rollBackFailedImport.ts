@@ -1,7 +1,7 @@
 /**
  * Undoes the companies an import inserted when a later step of it fails, so a
  * retry cannot insert them a second time. Called by importLeads; always
- * throws. Phone numbers and tasks go with a company (cascade); import_rows
+ * throws. Phone numbers, openers and tasks go with a company (cascade); import_rows
  * only lose their link, so they are deleted first. Updated companies stay.
  */
 import { inChunks } from '@/lib/import/chunks'

@@ -3,7 +3,7 @@ import type { LeadOpener } from '@/lib/leads/leadView'
 import { rankOpeners } from '@/lib/leads/rankOpeners'
 
 function opener(id: string, mix: LeadOpener['mix'], extra: Partial<LeadOpener> = {}): LeadOpener {
-  return { id, body: id, mix, script: 'latin', register: null, vertical: null, ...extra }
+  return { id, body: id, mix, script: 'latin', register: null, vertical: null, companyId: null, ...extra }
 }
 const want = { mix: ['te', 'en'] as const, script: 'latin' as const, register: 'casual' as const }
 
@@ -29,5 +29,21 @@ describe('rankOpeners', () => {
 
   it('returns an empty list for no openers', () => {
     expect(rankOpeners([], { ...want, mix: ['en'] })).toEqual([])
+  })
+})
+
+describe('rankOpeners: a lead\'s own opener', () => {
+  it('comes first even when its mix does not fit, and is never dropped', () => {
+    const list = [
+      opener('generic-exact', ['te', 'en']),
+      opener('own-hi', ['hi'], { companyId: 'c1' }),
+      opener('own-te', ['te', 'en'], { companyId: 'c1' }),
+    ]
+    const ranked = rankOpeners(list, { ...want, mix: ['te', 'en'] })
+    expect(ranked.map((r) => [r.opener.id, r.match])).toEqual([
+      ['own-te', 'company'],
+      ['own-hi', 'company'],
+      ['generic-exact', 'exact'],
+    ])
   })
 })

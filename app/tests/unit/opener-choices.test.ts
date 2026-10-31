@@ -15,8 +15,8 @@ function view(extra: Partial<LeadView>): LeadView {
     entryOffer: null, entryOfferIsDefault: false, longTermOpportunity: null,
     contacts: [], points: [],
     openers: [
-      { id: 'o-en', body: 'Hello {name} from {company}', mix: ['en'], script: 'latin', register: null, vertical: null },
-      { id: 'o-te', body: 'Namaskaram {name} {honorific}', mix: ['te', 'en'], script: 'latin', register: null, vertical: null },
+      { id: 'o-en', body: 'Hello {name} from {company}', mix: ['en'], script: 'latin', register: null, vertical: null, companyId: null },
+      { id: 'o-te', body: 'Namaskaram {name} {honorific}', mix: ['te', 'en'], script: 'latin', register: null, vertical: null, companyId: null },
     ],
     workspaceMix: ['te', 'hi', 'en'], tasks: [], activities: [], callOutcomes: [],
     ...extra,
