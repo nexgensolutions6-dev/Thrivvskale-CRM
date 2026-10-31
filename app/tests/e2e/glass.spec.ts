@@ -43,6 +43,16 @@ test.describe('Glass design system', () => {
     expect(await blurred(page, '.glass-row')).toEqual([])
   })
 
+  test('tailwind utilities beat .glass: the dock is position fixed, inset 16px from the sides', async ({ page }) => {
+    await page.goto('/glass-fixture?mode=full')
+    const dock = page.locator('[data-glass-level="L1"]')
+    await expect(dock).toHaveCSS('position', 'fixed')
+    const viewport = page.viewportSize()
+    const box = await dock.boundingBox()
+    expect(viewport && box, 'glass.spec dock: viewport or bounding box missing').toBeTruthy()
+    expect(box!.width).toBe(viewport!.width - 32) // inset-x-4 on both sides
+  })
+
   test('lite mode removes every blur but keeps the surfaces', async ({ page }) => {
     await page.goto('/glass-fixture?mode=lite')
     await expect(page.locator('html')).toHaveAttribute('data-glass', 'lite')
