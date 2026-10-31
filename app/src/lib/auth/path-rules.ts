@@ -13,11 +13,12 @@ const ROOT_FILES = new Set([
   '/manifest.webmanifest',
   '/manifest.json',
   '/sw.js',
+  '/offline.html',
 ])
 const ROOT_IMAGE = /^\/[^/]+\.(?:svg|png|jpe?g|gif|webp|avif|ico)$/i
 
 /** Folders of static assets: every file below them is public. */
-const ASSET_FOLDERS = ['/_next/', '/icons/', '/images/']
+const ASSET_FOLDERS = ['/_next/', '/icons/', '/images/', '/wallpapers/']
 
 /** "/login/" and "/login" are the same page. The root path "/" stays as it is. */
 export function stripTrailingSlash(pathname: string): string {
@@ -36,7 +37,8 @@ export function isAuthPath(pathname: string): boolean {
 /**
  * True for paths a visitor without a session may load: the login page, the
  * auth routes below `/auth/` and static assets. Everything else needs a
- * session.
+ * session. The PWA files (manifest, service worker, offline page, icons) must
+ * be here: the browser fetches them without asking who is signed in.
  */
 export function isPublicPath(pathname: string): boolean {
   const path = stripTrailingSlash(pathname)
