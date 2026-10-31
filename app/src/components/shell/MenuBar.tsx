@@ -6,14 +6,33 @@
  */
 import { Surface } from '@/components/glass/Surface'
 import { openPalette } from '@/lib/shell/palette-store'
-import { PLACEHOLDER_NOTE, PLACEHOLDER_SYNC, PLACEHOLDER_TARGETS } from '@/lib/shell/placeholder-status'
+import {
+  PLACEHOLDER_NOTE,
+  PLACEHOLDER_SYNC,
+  PLACEHOLDER_TARGETS,
+  STATUS_IS_PLACEHOLDER,
+} from '@/lib/shell/placeholder-status'
 import { Clock } from './Clock'
 
+// Every label sits on an opaque chip, not on the L1 blur (why: lib/shell/menu-bar-text.ts). The tokens are
+// spelled out in full so Tailwind finds them; menu-bar-contrast.test.ts checks they match that file.
+const CHIP_CLASS =
+  'rounded-full bg-(--glass-l2-solid) text-(--glass-text) forced-colors:bg-[Canvas] forced-colors:border'
+
 const BUTTON_CLASS =
-  'flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm transition-colors ' +
-  'hover:bg-black/5 dark:hover:bg-white/10 forced-colors:border'
+  `${CHIP_CLASS} flex h-9 min-w-9 items-center justify-center px-2 text-sm transition-[filter] ` +
+  'hover:brightness-95 dark:hover:brightness-125'
 
 const SAMPLE_HINT = 'Sample value: this is not connected to real data yet'
+
+// Muted ring while the data is made up; a solid green dot only once a real sync reports.
+const DOT_PLACEHOLDER = 'size-2 rounded-full border border-current opacity-60'
+const DOT_LIVE = 'size-2 rounded-full bg-emerald-600 forced-colors:bg-[CanvasText]'
+
+/** Compact "sample" marker, shown at every width, next to any made-up value. */
+function SampleTag() {
+  return <span className="text-xs italic">{PLACEHOLDER_NOTE}</span>
+}
 
 /** Quick add starts the palette on "add", which lists the ways to add leads. */
 function openQuickAdd(): void {
@@ -52,17 +71,20 @@ export function MenuBar() {
         <kbd className="font-sans">⌘K</kbd>
       </button>
 
-      <div className="ml-auto flex items-center gap-3 text-sm">
+      <div className={`${CHIP_CLASS} ml-auto flex h-9 items-center gap-3 px-3 text-sm`}>
         <span data-testid="targets" title={SAMPLE_HINT}>
           Calls <strong className="tabular-nums">{callsDone}/{callsGoal}</strong>{' '}
-          <span className="sr-only text-xs text-(--glass-text-secondary) sm:not-sr-only">({PLACEHOLDER_NOTE})</span>
+          {STATUS_IS_PLACEHOLDER && <SampleTag />}
         </span>
-        <span data-testid="sync-status" title={SAMPLE_HINT} className="flex items-center gap-1.5">
-          <span aria-hidden="true" className="size-2 rounded-full bg-emerald-600 forced-colors:bg-[CanvasText]" />
-          <span className="sr-only sm:not-sr-only">
-            {PLACEHOLDER_SYNC.label}{' '}
-            <span className="text-xs text-(--glass-text-secondary)">({PLACEHOLDER_NOTE})</span>
-          </span>
+        <span
+          data-testid="sync-status"
+          data-placeholder={STATUS_IS_PLACEHOLDER}
+          title={SAMPLE_HINT}
+          className="flex items-center gap-1.5"
+        >
+          <span aria-hidden="true" className={STATUS_IS_PLACEHOLDER ? DOT_PLACEHOLDER : DOT_LIVE} />
+          <span className="sr-only sm:not-sr-only">{PLACEHOLDER_SYNC.label}</span>{' '}
+          {STATUS_IS_PLACEHOLDER && <SampleTag />}
         </span>
         <Clock />
       </div>

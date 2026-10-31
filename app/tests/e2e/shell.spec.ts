@@ -107,6 +107,40 @@ test.describe('App shell', () => {
     await expect(bar.getByTestId('sync-status')).toContainText(/sample/i)
   })
 
+  for (const [name, size] of [['phone (390px)', MOBILE], ['desktop (1280px)', DESKTOP]] as const) {
+    test(`the sample marker is visible and the sync dot is muted at ${name}`, async ({ page }) => {
+      await page.setViewportSize(size)
+      await page.goto('/today')
+      const bar = page.getByTestId('menu-bar')
+      // toBeVisible fails for sr-only text that is merely clipped to 1px, which is the bug this guards.
+      for (const id of ['targets', 'sync-status']) {
+        const tag = bar.getByTestId(id).getByText('sample', { exact: true })
+        await expect(tag).toBeVisible()
+        const box = await tag.boundingBox()
+        expect(box?.width ?? 0, `${id} sample tag width at ${name}`).toBeGreaterThan(20)
+        expect(box?.height ?? 0, `${id} sample tag height at ${name}`).toBeGreaterThan(8)
+      }
+      const sync = bar.getByTestId('sync-status')
+      await expect(sync).toHaveAttribute('data-placeholder', 'true')
+      // The dot is a hollow ring (transparent fill), never the green "live" dot.
+      const dotFill = await sync.locator('[aria-hidden="true"]').evaluate((el) => getComputedStyle(el).backgroundColor)
+      expect(dotFill).toBe('rgba(0, 0, 0, 0)')
+      // Nothing in the bar may spill past its right edge or overlap the buttons (the bar is fixed, so
+      // the page-level scroll check cannot see it).
+      const barBox = await bar.boundingBox()
+      const clockBox = await bar.locator('time').boundingBox()
+      const paletteBox = await bar.getByRole('button', { name: 'Open command palette' }).boundingBox()
+      expect((clockBox?.x ?? 0) + (clockBox?.width ?? 0), 'clock right edge').toBeLessThanOrEqual(
+        (barBox?.x ?? 0) + (barBox?.width ?? 0),
+      )
+      const tagBox = await bar.getByTestId('targets').boundingBox()
+      expect(tagBox?.x ?? 0, 'targets start after the palette button').toBeGreaterThanOrEqual(
+        (paletteBox?.x ?? 0) + (paletteBox?.width ?? 0),
+      )
+      await expectNoHorizontalScroll(page)
+    })
+  }
+
   test('Ctrl+K opens the command palette, typing "leads" and Enter goes to Leads', async ({ page }) => {
     await page.setViewportSize(DESKTOP)
     await page.goto('/today')
