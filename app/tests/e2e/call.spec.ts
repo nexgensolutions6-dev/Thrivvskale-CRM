@@ -217,7 +217,7 @@ test('a refused outcome is set aside by name, the queue flows, and only a named 
   await expect(page.getByRole('heading', { name: 'Second Lead' })).toBeVisible()
   const refused = page.getByTestId('refused-outcomes')
   await expect(refused).toContainText('First Lead: Interested')
-  await expect(refused).toContainText('is not its number')
+  await expect(refused).toContainText("not one of this lead's numbers")
   await expect(page.getByTestId('outbox-status')).toHaveCount(0)
   expect(await callOutcomes(ids[0])).toEqual([])
 

@@ -257,9 +257,9 @@ describe('logCallInWorkspace', () => {
     const theirs = await addLead(stranger, 'Stranger Refused Co')
     const reasonOf = (input: LogCallInput) => log(input).then(() => null, refusalReason)
 
-    expect(await reasonOf(callInput(lead, { contactPointId: other.pointId }))).toMatch(/Refused Co/)
-    expect(await reasonOf(callInput(lead, { openerId: randomUUID() }))).toMatch(/\[log_call\] check opener/)
-    expect(await reasonOf(callInput(theirs))).toMatch(/not found/)
+    expect(await reasonOf(callInput(lead, { contactPointId: other.pointId }))).toMatch(/not one of this lead's numbers/)
+    expect(await reasonOf(callInput(lead, { openerId: randomUUID() }))).toMatch(/opener cannot be used/)
+    expect(await reasonOf(callInput(theirs))).toMatch(/no longer in your workspace/)
     expect(await reasonOf({ ...callInput(lead), durationSeconds: -1 })).toMatch(/durationSeconds/)
   })
 
