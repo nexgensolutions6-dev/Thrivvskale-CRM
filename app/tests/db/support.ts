@@ -1,85 +1,23 @@
 /**
- * Helpers for the database suite (`npm run test:db`), which runs against the
- * local Supabase stack (`npx supabase start`).
- *
- * Connection details are never hard-coded: they come from the environment
- * (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL)
- * or, when those are not all set, from `npx supabase status -o env`.
+ * Helpers for the database and e2e suites, which run against the local
+ * Supabase stack. Every helper that uses the service-role key refuses to run
+ * unless the stack is on 127.0.0.1 or localhost (see `assertLocalStack`).
  */
-import { execSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { fileURLToPath } from 'node:url'
 import { createClient, type SupabaseClientOptions } from '@supabase/supabase-js'
 import { WebSocket } from 'ws'
 import type { Database } from '@/lib/db/types'
+import { assertLocalStack, localStack, type LocalStack } from '../support/local-stack'
 
-export interface LocalStack {
-  apiUrl: string
-  anonKey: string
-  serviceRoleKey: string
-  dbUrl: string
-}
-
-const APP_ROOT = fileURLToPath(new URL('../..', import.meta.url))
-
-function parseEnvOutput(output: string): Record<string, string> {
-  const vars: Record<string, string> = {}
-  for (const line of output.split(/\r?\n/)) {
-    const match = /^([A-Z0-9_]+)=(.*)$/.exec(line.trim())
-    if (match) vars[match[1]] = match[2].replace(/^"(.*)"$/, '$1')
-  }
-  return vars
-}
-
-function required(vars: Record<string, string | undefined>, key: string): string {
-  const value = vars[key]
-  if (!value) {
-    throw new Error(
-      `Missing ${key}. Is the local stack running? Try \`npx supabase start\`.`,
-    )
-  }
-  return value
-}
-
-let cached: LocalStack | undefined
-
-export function localStack(): LocalStack {
-  if (cached) return cached
-  const env = process.env
-  if (
-    env.SUPABASE_URL &&
-    env.SUPABASE_ANON_KEY &&
-    env.SUPABASE_SERVICE_ROLE_KEY &&
-    env.SUPABASE_DB_URL
-  ) {
-    cached = {
-      apiUrl: env.SUPABASE_URL,
-      anonKey: env.SUPABASE_ANON_KEY,
-      serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
-      dbUrl: env.SUPABASE_DB_URL,
-    }
-    return cached
-  }
-  const output = execSync('npx supabase status -o env', {
-    cwd: APP_ROOT,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
-  const vars = parseEnvOutput(output)
-  cached = {
-    apiUrl: required(vars, 'API_URL'),
-    anonKey: required(vars, 'ANON_KEY'),
-    serviceRoleKey: required(vars, 'SERVICE_ROLE_KEY'),
-    dbUrl: required(vars, 'DB_URL'),
-  }
-  return cached
-}
+export { assertLocalStack, localStack, type LocalStack }
 
 type ClientOptions = SupabaseClientOptions<'public'>
 type Transport = NonNullable<ClientOptions['realtime']>['transport']
 
 // supabase-js builds a realtime client eagerly and needs a WebSocket
-// constructor. Node 22+ has one built in; on older Node fall back to `ws`.
+// constructor. Node 22+ has one built in; on older Node (this project allows
+// Node 20, and the pinned supabase-js 2.109.0 still throws there) fall back to
+// `ws`.
 const CLIENT_OPTIONS: ClientOptions = {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   ...(typeof globalThis.WebSocket === 'undefined'
@@ -95,6 +33,7 @@ export type Db = ReturnType<typeof newClient>
 
 /** Service-role client: bypasses RLS. Use only for test setup and teardown. */
 export function adminClient(stack: LocalStack): Db {
+  assertLocalStack(stack)
   return newClient(stack, stack.serviceRoleKey)
 }
 
@@ -147,6 +86,32 @@ export async function createUserWithWorkspace(
   if (signIn.error) throw signIn.error
 
   return { userId, workspaceId: ws.data.id, client }
+}
+
+/**
+ * Points the app code under test (the modules in `src/lib`) at the local
+ * stack, the way .env.local does for a running app. Call it in `beforeAll`.
+ */
+export function exposeStackToApp(stack: LocalStack): void {
+  assertLocalStack(stack)
+  process.env.NEXT_PUBLIC_SUPABASE_URL = stack.apiUrl
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = stack.anonKey
+  process.env.SUPABASE_SERVICE_ROLE_KEY = stack.serviceRoleKey
+}
+
+/** Deletes a user and every workspace they belong to (child rows cascade). Safe to call twice. */
+export async function deleteUserAndWorkspaces(stack: LocalStack, userId: string): Promise<void> {
+  const admin = adminClient(stack)
+  const memberships = await admin.from('members').select('workspace_id').eq('user_id', userId)
+  if (memberships.error) throw memberships.error
+  const workspaceIds = memberships.data.map((member) => member.workspace_id)
+  if (workspaceIds.length > 0) {
+    const removed = await admin.from('workspaces').delete().in('id', workspaceIds)
+    if (removed.error) throw removed.error
+  }
+  const deleted = await admin.auth.admin.deleteUser(userId)
+  // A test may already have deleted the user on purpose; that is fine.
+  if (deleted.error && deleted.error.status !== 404) throw deleted.error
 }
 
 /** Deletes the users and their workspaces (child rows cascade). */
