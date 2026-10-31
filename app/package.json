@@ -42,6 +42,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "pg": "^8.23.1",
+    "sharp": "0.35.5",
     "supabase": "^2.122.0",
     "tailwindcss": "^4",
     "typescript": "^5",
