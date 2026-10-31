@@ -223,8 +223,15 @@ describe('mapLeadRow: a WhatsApp cell that is not a phone number', () => {
     const lead = mapLeadRow(weFurnish)
 
     expect(lead.unparsedWhatsapp).toBe('https://wa.me/message/HYR3Z3NYD6YUF1')
-    expect(lead.points).toEqual([{ e164: '+918801842162', kind: 'business', waStatus: 'verified' }])
+    expect(lead.points).toEqual([{ e164: '+918801842162', kind: 'business', waStatus: 'unconfirmed' }])
     expect(lead.needsNumber).toBe(false)
+  })
+
+  it('still applies Verified to the phone when the WhatsApp cell is empty', () => {
+    const lead = mapLeadRow({ ...weFurnish, 'WhatsApp (verified)': '' })
+
+    expect(lead.unparsedWhatsapp).toBeNull()
+    expect(lead.points).toEqual([{ e164: '+918801842162', kind: 'business', waStatus: 'verified' }])
   })
 
   it('leaves unparsedWhatsapp null for an empty cell and for a real number', () => {

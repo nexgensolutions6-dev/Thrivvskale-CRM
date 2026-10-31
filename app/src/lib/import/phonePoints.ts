@@ -4,8 +4,10 @@
  *
  * The CSV status describes the WhatsApp number: the WhatsApp column when it
  * holds a number, otherwise the Phone. A phone that is not the WhatsApp
- * number stays 'unconfirmed'. A WhatsApp cell that is not a number (a wa.me
- * link) is ignored here; findUnparsedWhatsapp reports it.
+ * number stays 'unconfirmed'. A WhatsApp cell that is filled but not a number
+ * (a wa.me link): the status described that link, not the phone, so the
+ * phone is 'unconfirmed'; findUnparsedWhatsapp reports the link. An EMPTY
+ * WhatsApp cell leaves the status applying to the Phone.
  */
 import type { WaStatus } from '@/lib/domain'
 import { normalizePhone, type NormalizedPhone } from '@/lib/phone'
@@ -26,7 +28,8 @@ export function buildPhonePoints(
 ): LeadPoint[] {
   const phone = readPhone(phoneCell)
   const whatsapp = normalizePhone(whatsappCell)
-  const statusNumber = whatsapp ?? phone
+  const whatsappIsUnparsedText = whatsappCell !== '' && whatsapp === null
+  const statusNumber = whatsappIsUnparsedText ? null : (whatsapp ?? phone)
 
   const points: LeadPoint[] = []
   if (phone) points.push(toPoint(phone, statusNumber, status))
