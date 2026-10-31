@@ -4,7 +4,7 @@
  * The opener picker: the lead's call openers in the primary contact's
  * language mix (best match first), the chosen one with its name filled in,
  * a Copy button, and a WhatsApp button for every number that can get one
- * (landlines get none). Used by the /leads/[id] page, which prepares the
+ * (landlines get none). Used by the /leads/[id] page and the call card; both prepare the
  * texts on the server.
  */
 import { useState } from 'react'
@@ -16,9 +16,11 @@ export interface OpenerPickerProps {
   openers: PickerOpener[]
   points: PickerPoint[]
   mixLabel: string
+  /** Told which opener is chosen; the call flow logs it with the call. */
+  onSelect?: (openerId: string) => void
 }
 
-export function OpenerPicker({ openers, points, mixLabel }: OpenerPickerProps) {
+export function OpenerPicker({ openers, points, mixLabel, onSelect }: OpenerPickerProps) {
   const [selectedId, setSelectedId] = useState(openers[0]?.id ?? '')
   const [copied, setCopied] = useState(false)
   const selected = openers.find((opener) => opener.id === selectedId) ?? openers[0] ?? null
@@ -50,6 +52,7 @@ export function OpenerPicker({ openers, points, mixLabel }: OpenerPickerProps) {
                   aria-pressed={opener.id === selected.id}
                   onClick={() => {
                     setSelectedId(opener.id)
+                    onSelect?.(opener.id)
                     setCopied(false)
                   }}
                 >

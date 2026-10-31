@@ -2,10 +2,10 @@ import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // The Import screen uploads a lead CSV through a server action; the default
-  // 1 MB body limit is too tight once the file grows (limit in readLeadUpload).
+  // The Import screen (lead CSV) and voice notes upload through server actions; the
+  // default 1 MB body limit is too tight (limits in uploadLimit and validateVoiceNote).
   experimental: {
-    serverActions: { bodySizeLimit: "2mb" },
+    serverActions: { bodySizeLimit: "6mb" },
   },
   // An authenticated app reads cookies on every request, so there is nothing
   // static to cache. Cache Components and partial prefetching stay off.
