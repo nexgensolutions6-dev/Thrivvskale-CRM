@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildWaLink } from '@/lib/whatsapp/link'
+import { validateConfirmInput } from '@/lib/whatsapp/validateConfirmInput'
 
 const MOBILE = '+919876543210'
 
@@ -36,5 +37,23 @@ describe('buildWaLink', () => {
     const link = buildWaLink({ e164: MOBILE, waStatus: 'unconfirmed' }, 'a'.repeat(2000 - prefix.length))
     expect(link?.url.length).toBe(2000)
     expect(link?.copyOnly).toBe(false)
+  })
+})
+
+describe('validateConfirmInput', () => {
+  const ID = '00000000-0000-4000-8000-000000000000'
+
+  it('accepts a uuid and a boolean', () => {
+    expect(() => validateConfirmInput(ID, true)).not.toThrow()
+    expect(() => validateConfirmInput(ID, false)).not.toThrow()
+  })
+
+  it('rejects a string hasWhatsApp, naming the value', () => {
+    expect(() => validateConfirmInput(ID, 'false')).toThrow(/\[confirmWhatsApp\] validate input.*"false"/)
+  })
+
+  it('rejects a non-uuid or non-string contactPointId, naming the value', () => {
+    expect(() => validateConfirmInput('abc', true)).toThrow(/validate input.*"abc"/)
+    expect(() => validateConfirmInput(42, true)).toThrow(/validate input.*42/)
   })
 })

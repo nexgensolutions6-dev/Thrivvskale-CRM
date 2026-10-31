@@ -66,7 +66,12 @@ describe('confirmWhatsAppForPoint', () => {
     const activities = await user.client.from('activities').select('*').eq('contact_point_id', pointId)
     expect(activities.error).toBeNull()
     expect(activities.data).toHaveLength(1)
-    expect(activities.data![0]).toMatchObject({ company_id: companyId, workspace_id: user.workspaceId })
+    expect(activities.data![0]).toMatchObject({
+      company_id: companyId,
+      workspace_id: user.workspaceId,
+      type: 'note',
+      metadata: { event: 'whatsapp_confirmation', waStatus: 'none' },
+    })
   })
 
   it('sets verified when the number has WhatsApp', async () => {
@@ -92,5 +97,23 @@ describe('confirmWhatsAppForPoint', () => {
       /not found/,
     )
     expect((await readPoint(owner, pointId)).wa_status).toBe('unconfirmed')
+  })
+
+  it('rejects a string hasWhatsApp without writing anything', async () => {
+    const user = await newUser('wa-badbool')
+    const { pointId } = await seedPoint(user)
+    await expect(
+      confirmWhatsAppForPoint(user.client, user.workspaceId, pointId, 'false' as unknown as boolean),
+    ).rejects.toThrow(/\[confirmWhatsApp\] validate input/)
+    expect((await readPoint(user, pointId)).wa_status).toBe('unconfirmed')
+    const activities = await user.client.from('activities').select('id').eq('contact_point_id', pointId)
+    expect(activities.data).toHaveLength(0)
+  })
+
+  it('rejects a non-uuid contact point id before reaching the database', async () => {
+    const user = await newUser('wa-badid')
+    await expect(confirmWhatsAppForPoint(user.client, user.workspaceId, 'not-a-uuid', true)).rejects.toThrow(
+      /\[confirmWhatsApp\] validate input.*"not-a-uuid"/,
+    )
   })
 })

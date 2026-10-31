@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/db/types'
 import { stepError } from '@/lib/step-error'
 import { appendActivity } from './appendActivity'
+import { validateConfirmInput } from './validateConfirmInput'
 
 const MODULE = 'confirmWhatsAppForPoint'
 
@@ -16,6 +17,7 @@ export async function confirmWhatsAppForPoint(
   contactPointId: string,
   hasWhatsApp: boolean,
 ): Promise<void> {
+  validateConfirmInput(contactPointId, hasWhatsApp)
   const found = await db
     .from('contact_points')
     .select('id, company_id, e164')
