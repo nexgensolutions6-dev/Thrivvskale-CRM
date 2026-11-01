@@ -70,7 +70,9 @@ grant execute on function public.set_company_dnd(uuid, uuid, boolean, text) to a
 -- The cell is cut into number runs at anything that cannot be part of a
 -- written phone number (letters, "," ";" "/" ...), so "98480, 22338" is two
 -- runs and never matches 9848022338. Spaces, "+", "-", "(", ")" and "." stay
--- inside a run: "+91 98480 22338" is one number.
+-- inside a run: "+91 98480 22338" is one number. So do the Unicode dashes
+-- people paste from documents: \u2010-\u2015 (hyphen to horizontal bar, which
+-- includes the en and em dash) and \u2212 (minus sign).
 create function public.import_cell_has_number(p_cell text, p_tails text[])
 returns boolean
 language sql
@@ -79,7 +81,7 @@ set search_path = ''
 as $$
   select exists (
     select 1
-    from regexp_split_to_table(p_cell, '[^0-9\s+().-]+') as run(chars)
+    from regexp_split_to_table(p_cell, '[^0-9\s+().\-\u2010-\u2015\u2212]+') as run(chars)
     cross join unnest(p_tails) as tail(digits)
     where length(tail.digits) >= 7
       and strpos(regexp_replace(run.chars, '\D', '', 'g'), tail.digits) > 0
@@ -167,7 +169,7 @@ grant execute on function public.scrub_import_cells(jsonb, text[], text[]) to au
 --   5. move the consent history of the numbers onto contact_id / company_id,
 --      so it is not orphaned when the numbers go;
 --   6. delete the person's numbers, then the contact row;
---   7. log erased with company_id and contact_id.
+--   7. log erased with company_id and contact_id (note: count of refused audio paths, if any).
 -- Returns the voice-note storage paths, all under '<p_workspace_id>/' (may be empty).
 
 create function public.erase_contact(p_workspace_id uuid, p_contact_id uuid)
@@ -183,6 +185,7 @@ declare
   v_number_tails text[];
   v_activity_ids uuid[];
   v_audio_paths text[];
+  v_dropped_paths integer;
 begin
   if not public.is_member(p_workspace_id) then
     raise exception '[erase_contact] check membership failed: not a member of workspace %', p_workspace_id
@@ -216,6 +219,14 @@ begin
   where a.workspace_id = p_workspace_id and a.id = any (v_activity_ids)
     and a.type = 'voice_note'
     and starts_with(a.metadata ->> 'storagePath', p_workspace_id::text || '/');
+
+  -- Paths outside the workspace folder are not returned; count them for the log.
+  select count(*) into v_dropped_paths
+  from public.activities a
+  where a.workspace_id = p_workspace_id and a.id = any (v_activity_ids)
+    and a.type = 'voice_note'
+    and a.metadata ->> 'storagePath' is not null
+    and not starts_with(a.metadata ->> 'storagePath', p_workspace_id::text || '/');
 
   -- 2. Anonymised timeline: the row (type, time, company) stays, the content goes.
   update public.activities a
@@ -253,9 +264,11 @@ begin
     raise exception '[erase_contact] delete contact % failed: row was not deleted', p_contact_id;
   end if;
 
-  -- 7. The record of the erasure, without any personal data.
-  insert into public.consent_log (workspace_id, company_id, contact_id, event)
-  values (p_workspace_id, v_company_id, p_contact_id, 'erased');
+  -- 7. The record of the erasure, without any personal data. The note only
+  --    counts the audio paths that were refused (none of them is stored).
+  insert into public.consent_log (workspace_id, company_id, contact_id, event, note)
+  values (p_workspace_id, v_company_id, p_contact_id, 'erased',
+          case when v_dropped_paths > 0 then v_dropped_paths || ' audio path(s) outside the workspace not removed' end);
 
   return v_audio_paths;
 end;

@@ -226,6 +226,8 @@ describe('eraseContactData audio paths', () => {
     const returned = await user.client.rpc('erase_contact', { p_workspace_id: user.workspaceId, p_contact_id: lead.contactId })
     expect(returned.error).toBeNull()
     expect(returned.data).toEqual([missingPath])
+    const logged = await user.client.from('consent_log').select('note').eq('contact_id', lead.contactId).eq('event', 'erased').single()
+    expect(logged.data?.note).toBe('1 audio path(s) outside the workspace not removed')
 
     const secondId = await insertId(user, 'contacts', { company_id: lead.companyId, name: 'Second Person' })
     await insertId(user, 'activities', {
@@ -320,6 +322,9 @@ describe('import_cell_has_number', () => {
     ['98480; 22338', false],
     ['98480 or 22338', false],
     ['90000 12345, 98480 22338', true],
+    ['98480\u201322338', true], // en dash
+    ['98480\u201422338', true], // em dash
+    ['98480\u221222338', true], // minus sign
   ]
   let user: TestUser
   beforeAll(async () => {
