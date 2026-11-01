@@ -49,7 +49,7 @@ describe('validateConfirmInput', () => {
   })
 
   it('rejects a string hasWhatsApp, naming the value', () => {
-    expect(() => validateConfirmInput(ID, 'false')).toThrow(/\[confirmWhatsApp\] validate input.*"false"/)
+    expect(() => validateConfirmInput(ID, 'false')).toThrow(/\[validateConfirmInput\] validate input.*"false"/)
   })
 
   it('rejects a non-uuid or non-string contactPointId, naming the value', () => {

@@ -99,6 +99,20 @@ describe('rewriteVariant', () => {
     )
   })
 
+  it('names the module when the reply was cut off at max_tokens', async () => {
+    const create = vi.fn().mockResolvedValue({ content: [{ type: 'text', text: 'నమస్తే sir, mee web' }], stop_reason: 'max_tokens' })
+    await expect(rewriteVariant({ ...INPUT, mix: [...INPUT.mix], examples: [] }, { messages: { create } } as never)).rejects.toThrow(
+      /\[rewrite\.server\] read reply failed: reply cut off \(max_tokens\)/,
+    )
+  })
+
+  it('names the module when no client is injected and the API key is missing', async () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', '')
+    vi.stubEnv('ANTHROPIC_AUTH_TOKEN', '')
+    await expect(rewriteVariant({ ...INPUT, mix: [...INPUT.mix], examples: [] })).rejects.toThrow(/\[rewrite\.server\] call model/)
+    vi.unstubAllEnvs()
+  })
+
   it('imports server-only', () => {
     const source = readFileSync('src/lib/language/rewrite.server.ts', 'utf8')
     expect(source).toContain("import 'server-only'")

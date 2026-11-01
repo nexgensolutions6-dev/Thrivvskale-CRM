@@ -14,12 +14,14 @@ const MAX_OUTPUT_TOKENS = 2000
 
 export async function rewriteVariant(
   input: RewriteInput,
-  client: Pick<Anthropic, 'messages'> = new Anthropic(),
+  client?: Pick<Anthropic, 'messages'>,
 ): Promise<string> {
   const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL
   let response
   try {
-    response = await client.messages.create({
+    // Built here, not as a default parameter, so a missing API key is named by stepError.
+    const c = client ?? new Anthropic()
+    response = await c.messages.create({
       model,
       max_tokens: MAX_OUTPUT_TOKENS,
       system: REWRITE_SYSTEM_PROMPT,
@@ -28,6 +30,7 @@ export async function rewriteVariant(
   } catch (error) {
     throw stepError(MODULE, `call model ${model}`, error)
   }
+  if (response.stop_reason === 'max_tokens') throw stepError(MODULE, 'read reply', 'reply cut off (max_tokens)')
   const text = response.content
     .flatMap((block) => (block.type === 'text' ? [block.text] : []))
     .join('')
