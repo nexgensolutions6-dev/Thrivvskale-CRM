@@ -92,6 +92,28 @@ describe('buildTemplateMessage', () => {
     expect(message?.link).toBeNull()
   })
 
+  it('never leaves a placeholder when name, honorific and company are missing', () => {
+    const message = buildTemplateMessage(template, point, ['en'], {})
+    expect(message?.text).toBe('Hello there, about your business')
+    expect(message?.text).not.toContain('{')
+    expect(message?.link?.url).not.toContain(encodeURIComponent('{'))
+  })
+
+  it('drops an empty honorific without a stray space', () => {
+    const message = buildTemplateMessage(template, point, ['en'], { name: 'Ramesh', company: 'Sri Coaching', honorific: '' })
+    expect(message?.text).toBe('Hello Ramesh, about Sri Coaching')
+  })
+
+  it('treats blank values as missing', () => {
+    const message = buildTemplateMessage(template, point, ['en'], { name: '  ', company: ' ', honorific: ' ' })
+    expect(message?.text).toBe('Hello there, about your business')
+  })
+
+  it('returns null when the body has a placeholder it cannot fill', () => {
+    const odd: CallTemplate = { ...template, variants: [{ ...template.variants[0], body: 'Hello {name}, {offer}' }] }
+    expect(buildTemplateMessage(odd, point, ['en'], who)).toBeNull()
+  })
+
   it('returns null when no variant of the template fits', () => {
     const teluguOnly: CallTemplate = { ...template, variants: [{ ...template.variants[0], mix: ['te'] }] }
     expect(buildTemplateMessage(teluguOnly, point, ['hi'], who)).toBeNull()
