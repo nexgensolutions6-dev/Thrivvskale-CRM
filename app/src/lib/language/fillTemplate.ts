@@ -1,7 +1,8 @@
 /**
  * Replaces {name}, {company} and {honorific} in a script body. A missing
- * value or an unknown placeholder is left as written so gaps are visible.
- * Re-exported by variants.ts.
+ * value or an unknown placeholder is left as written, so callers that show
+ * text to customers must go through fillSafeText (fallbacks plus a leftover
+ * check). Re-exported by variants.ts.
  */
 export type TemplateContext = { name?: string; company?: string; honorific?: string }
 

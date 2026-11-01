@@ -8,8 +8,8 @@
  */
 import type { CallTemplate } from '@/lib/call/callScreen'
 import type { Mix, WaStatus } from '@/lib/domain'
-import { fillTemplate, pickVariant, type TemplateContext } from '@/lib/language/variants'
-import { tidySpaces, withFallbacks } from '@/lib/content/templateFallbacks'
+import { pickVariant, type TemplateContext } from '@/lib/language/variants'
+import { fillSafeText } from '@/lib/content/fillSafeText'
 import { buildWaLink, type WaLink } from '@/lib/whatsapp/link'
 
 export interface TemplateMessage {
@@ -26,11 +26,8 @@ export function buildTemplateMessage(
   const wanted: Mix = mix.length > 0 ? mix : ['en']
   const picked = pickVariant(template.variants, { mix: wanted, script: 'latin', register: 'formal' })
   if (picked === null) return null
-  const text = tidySpaces(fillTemplate(picked.variant.body, withFallbacks(who)))
   // A leftover {placeholder} must never reach a customer: show no message instead.
-  if (/\{[^}]*\}/.test(text)) {
-    console.error(`[buildTemplateMessage] fill template ${template.id}: unfilled placeholder left in text`)
-    return null
-  }
+  const text = fillSafeText(picked.variant.body, who, `template ${template.id}`)
+  if (text === null) return null
   return { text, link: buildWaLink(point, text) }
 }

@@ -53,7 +53,7 @@ export function ObjectionItem({ objection, mix, selected, onToggle }: ObjectionI
       </button>
       {selected && (
         <div className="flex flex-col gap-2 pl-2">
-          <p data-testid="objection-response" className="min-w-0 whitespace-pre-wrap break-words">{response.body === '' ? 'No answer written yet' : response.body}</p>
+          <p data-testid="objection-response" className="min-w-0 whitespace-pre-wrap break-words">{response.body.trim() === '' ? 'No answer written yet' : response.body}</p>
           {response.isDraft && <span className={`${CHIP} self-start`}>Draft rewrite, not approved yet</span>}
           {response.needsRewrite && (
             <div className="flex flex-wrap items-center gap-3">

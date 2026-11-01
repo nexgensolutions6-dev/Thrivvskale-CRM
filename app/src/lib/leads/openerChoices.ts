@@ -1,13 +1,14 @@
 /**
  * Prepares the opener picker's data from a LeadView: the lead's language mix
  * (primary contact's, else workspace default), the openers in that mix best
- * first with {name}, {company} and {honorific} filled in, and each phone
+ * first with {name}, {company} and {honorific} filled in
+ * (fallback wording when missing; text is null if a placeholder cannot be filled), and each phone
  * number with its owner's name. Pure. Called by the /leads/[id] page.
  */
 import type { Mix, Register, Script, WaStatus } from '@/lib/domain'
 import { honorificFor } from '@/lib/language/honorific'
 import { toMixText } from '@/lib/language/mixText'
-import { fillTemplate } from '@/lib/language/variants'
+import { fillSafeText } from '@/lib/content/fillSafeText'
 import { leadMix } from './contactMix'
 import type { LeadView } from './leadView'
 import { pickPrimaryContact } from './primaryContact'
@@ -25,8 +26,8 @@ const MATCH_LABELS = {
 
 export interface PickerOpener {
   id: string
-  /** The opener with {name}, {company} and {honorific} filled in. */
-  text: string
+  /** The opener with {name}, {company} and {honorific} filled in; null when it cannot be filled safely. */
+  text: string | null
   matchLabel: string
   mixLabel: string
 }
@@ -57,7 +58,7 @@ export function buildOpenerChoices(view: LeadView): OpenerChoices {
   const ranked = rankOpeners(view.openers, { mix, script, register })
   const openers = ranked.map(({ opener, match }) => ({
     id: opener.id,
-    text: fillTemplate(opener.body, { name, company: view.company.name, honorific }),
+    text: fillSafeText(opener.body, { name, company: view.company.name, honorific }, `opener ${opener.id}`),
     matchLabel: MATCH_LABELS[match],
     mixLabel: toMixText(opener.mix),
   }))

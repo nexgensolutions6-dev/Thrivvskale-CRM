@@ -4,7 +4,8 @@
  * The opener picker: the lead's call openers in the primary contact's
  * language mix (best match first), the chosen one with its name filled in,
  * a Copy button, and a WhatsApp button for every number that can get one
- * (landlines get none). Used by the /leads/[id] page and the call card; both prepare the
+ * (landlines get none). An opener that cannot be filled safely shows a plain
+ * message and no actions. Used by the /leads/[id] page and the call card; both prepare the
  * texts on the server.
  */
 import { useState } from 'react'
@@ -22,18 +23,7 @@ export interface OpenerPickerProps {
 
 export function OpenerPicker({ openers, points, mixLabel, onSelect }: OpenerPickerProps) {
   const [selectedId, setSelectedId] = useState(openers[0]?.id ?? '')
-  const [copied, setCopied] = useState(false)
   const selected = openers.find((opener) => opener.id === selectedId) ?? openers[0] ?? null
-
-  async function copy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-    } catch (error) {
-      console.error('[OpenerPicker] copy failed', error)
-      setCopied(false)
-    }
-  }
 
   return (
     <section aria-labelledby="opener-heading" className="flex flex-col gap-3">
@@ -53,7 +43,6 @@ export function OpenerPicker({ openers, points, mixLabel, onSelect }: OpenerPick
                   onClick={() => {
                     setSelectedId(opener.id)
                     onSelect?.(opener.id)
-                    setCopied(false)
                   }}
                 >
                   {`Opener ${index + 1} (${opener.mixLabel}, ${opener.matchLabel})`}
@@ -61,17 +50,41 @@ export function OpenerPicker({ openers, points, mixLabel, onSelect }: OpenerPick
               </li>
             ))}
           </ul>
-          <p data-testid="opener-text" className="min-w-0 whitespace-pre-wrap break-words text-lg">{selected.text}</p>
-          <div className="flex flex-wrap items-center gap-3">
-            <button type="button" className={BUTTON} onClick={() => copy(selected.text)}>Copy opener</button>
-            {copied && <span role="status" className="text-sm">Copied</span>}
-            {points.map((point) => (
-              <WhatsAppButton key={point.id} point={point} text={selected.text} />
-            ))}
-          </div>
+          {selected.text === null ? (
+            <p data-testid="opener-text" className="text-lg">This opener cannot be filled in for this lead yet.</p>
+          ) : (
+            <OpenerActions key={selected.id} text={selected.text} points={points} />
+          )}
         </>
       )}
     </section>
+  )
+}
+
+function OpenerActions({ text, points }: { text: string; points: PickerPoint[] }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+    } catch (error) {
+      console.error('[OpenerPicker] copy failed', error)
+      setCopied(false)
+    }
+  }
+
+  return (
+    <>
+      <p data-testid="opener-text" className="min-w-0 whitespace-pre-wrap break-words text-lg">{text}</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className={BUTTON} onClick={copy}>Copy opener</button>
+        {copied && <span role="status" className="text-sm">Copied</span>}
+        {points.map((point) => (
+          <WhatsAppButton key={point.id} point={point} text={text} />
+        ))}
+      </div>
+    </>
   )
 }
 

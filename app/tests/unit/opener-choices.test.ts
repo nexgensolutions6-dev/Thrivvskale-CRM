@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { LeadContact, LeadView } from '@/lib/leads/leadView'
 import { buildOpenerChoices } from '@/lib/leads/openerChoices'
+import { buildWaLink } from '@/lib/whatsapp/link'
 
 function contact(extra: Partial<LeadContact>): LeadContact {
   return {
@@ -49,5 +50,26 @@ describe('buildOpenerChoices', () => {
       ],
     }))
     expect(choices.points.map((p) => p.owner)).toEqual(['Ramesh', 'company line'])
+  })
+
+  it('never leaves a {placeholder} in an opener when the lead has no contact or a blank name', () => {
+    const point = { e164: '+919866139900', waStatus: 'unconfirmed' as const }
+    const noContact = buildOpenerChoices(view({}))
+    const blankName = buildOpenerChoices(view({ contacts: [contact({ name: '  ', nameLatin: null })] }))
+    for (const choices of [noContact, blankName]) {
+      for (const opener of choices.openers) {
+        expect(opener.text).not.toBeNull()
+        expect(opener.text).not.toMatch(/[{}]/)
+        expect(buildWaLink(point, opener.text as string)?.url).not.toMatch(/%7B|\{/)
+      }
+    }
+    expect(noContact.openers[1].text).toBe('Hello there from Divyank Industries')
+  })
+
+  it('gives no text (so no link) when an opener has an unknown placeholder', () => {
+    const choices = buildOpenerChoices(view({
+      openers: [{ id: 'o-x', body: 'Hi {name}, {offer}', mix: ['en'], script: 'latin', register: null, vertical: null, companyId: null }],
+    } as Partial<LeadView>))
+    expect(choices.openers[0].text).toBeNull()
   })
 })
