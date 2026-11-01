@@ -9,6 +9,13 @@ on:
   pull_request:
     paths: ['app/**', '.github/workflows/check.yml']
 
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
