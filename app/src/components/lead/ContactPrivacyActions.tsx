@@ -3,7 +3,8 @@
 /**
  * "Export data" and "Erase" for one person in the PrivacyMenu. Export saves
  * the exportContact JSON as a file; Erase asks once more, then calls
- * eraseContact (numbers, name and notes go; the company stays) and refreshes.
+ * eraseContact (the person's numbers, name, notes and audio go; the company
+ * and its company-level notes stay) and refreshes.
  */
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
@@ -12,6 +13,8 @@ import { BUTTON } from './styles'
 
 type Message = { text: string; isError: boolean }
 
+const REVOKE_DELAY_MS = 10_000
+
 function saveJsonFile(fileName: string, data: unknown): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -19,7 +22,8 @@ function saveJsonFile(fileName: string, data: unknown): void {
   link.href = url
   link.download = fileName
   link.click()
-  URL.revokeObjectURL(url)
+  // Revoking straight after click() can cancel the download in Safari and Firefox.
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS)
 }
 
 export function ContactPrivacyActions({ contactId, label }: { contactId: string; label: string }) {
@@ -54,6 +58,10 @@ export function ContactPrivacyActions({ contactId, label }: { contactId: string;
       const result = await eraseContact(contactId)
       if (!result.ok) return { text: result.message, isError: true }
       setConfirming(false)
+      if (result.audioNotRemoved > 0) {
+        const count = result.audioNotRemoved
+        return { text: `Erased, but ${count} voice note file(s) could not be deleted. Reload the page and tell an admin.`, isError: true }
+      }
       router.refresh()
       return null
     })
@@ -74,7 +82,10 @@ export function ContactPrivacyActions({ contactId, label }: { contactId: string;
       {confirming && (
         <div role="group" aria-label={`Confirm erasing ${label}`} className="flex flex-col gap-2">
           <p className="text-sm">
-            Their numbers, name and notes are deleted for good. The company and an emptied call history stay.
+            Their numbers, name, contact notes, the notes and call details logged against them, their voice
+            notes and their cells in imported files are deleted for good. The company and an emptied call
+            history stay. Company-level notes, voice notes and task titles are not removed: they are not
+            linked to one person, so check them by hand.
           </p>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={BUTTON} disabled={pending} onClick={doErase}>

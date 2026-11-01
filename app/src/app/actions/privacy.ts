@@ -17,6 +17,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server-client'
 import { getSessionWorkspace } from '@/lib/workspace'
 
 export type ExportResult = { ok: true; data: ContactExport } | { ok: false; message: string }
+/** audioNotRemoved: how many voice-note files could not be deleted (the erase itself went through). */
+export type EraseActionResult = { ok: true; audioNotRemoved: number } | { ok: false; message: string }
 
 function refreshLeadPage(): void {
   revalidatePath('/leads/[id]', 'page')
@@ -34,13 +36,14 @@ export async function setDnd(companyId: unknown, dnd: unknown, note?: unknown): 
   }
 }
 
-export async function eraseContact(contactId: unknown): Promise<ActionResult> {
+export async function eraseContact(contactId: unknown): Promise<EraseActionResult> {
   const { workspaceId } = await getSessionWorkspace()
   try {
     const db = await createSupabaseServerClient()
-    await eraseContactData(db, workspaceId, contactId)
-    refreshLeadPage()
-    return { ok: true }
+    const { audioNotRemoved } = await eraseContactData(db, workspaceId, contactId)
+    // On an audio failure the page is not refreshed, so the form can still show the warning.
+    if (audioNotRemoved.length === 0) refreshLeadPage()
+    return { ok: true, audioNotRemoved: audioNotRemoved.length }
   } catch (error) {
     return failureResult('eraseContact', error)
   }

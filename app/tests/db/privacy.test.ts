@@ -3,9 +3,11 @@
  * the ranked queue, logs opted_out / consented), eraseContactData (no number,
  * name or name_latin left; company and anonymised activities kept; logs
  * erased), exportContactData (everything held, logs exported) and
- * setContactPointVisibility. Also checks workspace scoping and input
- * validation. Local Supabase stack only.
+ * setContactPointVisibility, plus readOpenTasks hiding a DND company's
+ * tasks. Also checks workspace scoping and input validation. Local Supabase
+ * stack only.
  */
+import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { loadQueueItems } from '@/lib/call/loadQueueItems'
 import { eraseContactData } from '@/lib/privacy/eraseContact'
@@ -13,6 +15,7 @@ import { exportContactData } from '@/lib/privacy/exportContact'
 import { setCompanyDnd } from '@/lib/privacy/setDnd'
 import { setContactPointVisibility } from '@/lib/privacy/setPointVisibility'
 import { rankQueue } from '@/lib/queue/rank'
+import { readOpenTasks } from '@/lib/today/readOpenTasks'
 import { adminClient, cleanup, createUserWithWorkspace, localStack, type LocalStack, type TestUser } from './support'
 
 const SETUP_TIMEOUT = 120_000
@@ -34,13 +37,21 @@ async function newUser(label: string): Promise<TestUser> {
   return user
 }
 
-async function insertId(user: TestUser, table: 'companies' | 'contacts' | 'contact_points' | 'activities', row: object): Promise<string> {
+const WEBM = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00])
+
+type SeedTable = 'companies' | 'contacts' | 'contact_points' | 'activities' | 'pain_points' | 'import_rows' | 'tasks'
+
+async function insertId(user: TestUser, table: SeedTable, row: object): Promise<string> {
   const result = await user.client.from(table).insert({ workspace_id: user.workspaceId, ...row } as never).select('id').single()
   if (result.error) throw result.error
   return (result.data as { id: string }).id
 }
 
-/** A company with one person (two numbers), one company line, a call, a note and an import row. */
+/**
+ * A company with one person (two numbers), one company line, a call with a pain
+ * point, a note and three import rows: the company's, a skipped row holding the
+ * person's second number, and an unrelated row with the same name.
+ */
 async function seedLead(user: TestUser) {
   const companyId = await insertId(user, 'companies', { name: 'Sai Dental Clinic', base_score: 50 })
   const contactId = await insertId(user, 'contacts', {
@@ -62,8 +73,13 @@ async function seedLead(user: TestUser) {
   })
   const call = await user.client.from('calls').insert({
     workspace_id: user.workspaceId, activity_id: callActivityId, outcome: 'interested', who_answered: 'Ravi',
+    lost_reason: 'Ravi says the price is too high',
   })
   if (call.error) throw call.error
+  const painPointId = await insertId(user, 'pain_points', {
+    company_id: companyId, activity_id: callActivityId, current_tool: 'Ravi paper diary',
+    frequency: 'daily', quote: 'Ravi: we lose bookings', quote_en: 'We lose bookings',
+  })
   const noteActivityId = await insertId(user, 'activities', {
     company_id: companyId, contact_id: contactId, type: 'note', body: 'Ravi wants a booking page',
   })
@@ -78,7 +94,18 @@ async function seedLead(user: TestUser) {
     raw: { Company: 'Sai Dental Clinic', Contact: 'Ravi Kumar', Phone: '98480 22338', Area: 'Ameerpet' },
   })
   if (importRow.error) throw importRow.error
-  return { companyId, contactId, mobileId, secondId, lineId, callActivityId, noteActivityId, companyNoteId, batchId: batch.data.id }
+  const skippedRowId = await insertId(user, 'import_rows', {
+    batch_id: batch.data.id, row_number: 2, status: 'skipped',
+    raw: { Company: 'Sai Dental', Contact: '  ravi   KUMAR ', Phone: '+91 98480 11111', Area: 'Ameerpet' },
+  })
+  const otherRowId = await insertId(user, 'import_rows', {
+    batch_id: batch.data.id, row_number: 3, status: 'skipped',
+    raw: { Company: 'Kumar Opticals', Contact: 'Ravi Kumar', Phone: '90000 12345' },
+  })
+  return {
+    companyId, contactId, mobileId, secondId, lineId, callActivityId, noteActivityId, companyNoteId, painPointId,
+    batchId: batch.data.id, skippedRowId, otherRowId,
+  }
 }
 
 async function consentEvents(user: TestUser, companyId: string) {
@@ -117,8 +144,22 @@ describe('eraseContactData', () => {
   it('leaves no number, name or name_latin, keeps the company and anonymised activities, logs erased', async () => {
     const user = await newUser('privacy-erase')
     const lead = await seedLead(user)
+    const optOut = await user.client.from('consent_log')
+      .insert({ workspace_id: user.workspaceId, contact_point_id: lead.mobileId, event: 'opted_out', note: 'per number' })
+    if (optOut.error) throw optOut.error
+    const voiceId = randomUUID()
+    const audioPath = `${user.workspaceId}/${voiceId}.webm`
+    const upload = await user.client.storage.from('voice-notes').upload(audioPath, WEBM, { contentType: 'audio/webm' })
+    if (upload.error) throw upload.error
+    await insertId(user, 'activities', {
+      id: voiceId, company_id: lead.companyId, contact_id: lead.contactId, type: 'voice_note',
+      body: 'Voice note', metadata: { storagePath: audioPath, sizeBytes: WEBM.length },
+    })
 
-    await eraseContactData(user.client, user.workspaceId, lead.contactId)
+    const result = await eraseContactData(user.client, user.workspaceId, lead.contactId)
+    expect(result).toEqual({ audioNotRemoved: [] })
+    const audio = await adminClient(stack).storage.from('voice-notes').list(user.workspaceId, { limit: 100 })
+    expect(audio.data?.map((file) => file.name)).not.toContain(`${voiceId}.webm`)
 
     const contact = await user.client.from('contacts').select('id').eq('id', lead.contactId)
     expect(contact.data).toEqual([])
@@ -140,14 +181,23 @@ describe('eraseContactData', () => {
     expect(byId.get(lead.callActivityId)?.type).toBe('call')
     expect(byId.get(lead.companyNoteId)?.body).toBe('Clinic opens at 10')
 
-    const call = await user.client.from('calls').select('outcome, who_answered').eq('activity_id', lead.callActivityId).single()
-    expect(call.data).toEqual({ outcome: 'interested', who_answered: null })
+    const call = await user.client.from('calls').select('outcome, who_answered, lost_reason')
+      .eq('activity_id', lead.callActivityId).single()
+    expect(call.data).toEqual({ outcome: 'interested', who_answered: null, lost_reason: null })
+    const pain = await user.client.from('pain_points').select('quote, quote_en, current_tool, frequency')
+      .eq('id', lead.painPointId).single()
+    expect(pain.data).toEqual({ quote: null, quote_en: null, current_tool: null, frequency: null })
 
-    const raw = await user.client.from('import_rows').select('raw').eq('batch_id', lead.batchId).single()
-    expect(raw.data?.raw).toEqual({ Company: 'Sai Dental Clinic', Contact: '[erased]', Phone: '[erased]', Area: 'Ameerpet' })
+    const rows = await user.client.from('import_rows').select('row_number, raw').eq('batch_id', lead.batchId).order('row_number')
+    expect(rows.data?.map((row) => row.raw)).toEqual([
+      { Company: 'Sai Dental Clinic', Contact: '[erased]', Phone: '[erased]', Area: 'Ameerpet' },
+      { Company: 'Sai Dental', Contact: '[erased]', Phone: '[erased]', Area: 'Ameerpet' },
+      { Company: 'Kumar Opticals', Contact: 'Ravi Kumar', Phone: '90000 12345' },
+    ])
 
     const events = await consentEvents(user, lead.companyId)
     expect(events).toEqual([
+      { event: 'opted_out', company_id: lead.companyId, contact_id: lead.contactId, contact_point_id: null, note: 'per number' },
       { event: 'erased', company_id: lead.companyId, contact_id: lead.contactId, contact_point_id: null, note: null },
     ])
   })
@@ -168,11 +218,34 @@ describe('exportContactData', () => {
     expect(exported.calls).toEqual([expect.objectContaining({ activity_id: lead.callActivityId, who_answered: 'Ravi' })])
     expect(text).not.toContain('+914023456789')
     expect(text).not.toContain('Clinic opens at 10')
+    expect(text).not.toContain('Kumar Opticals')
+    expect(exported.importCells.map((cell) => [cell.row_number, cell.cell_key, cell.cell_value])).toEqual([
+      [1, 'Contact', 'Ravi Kumar'], [1, 'Phone', '98480 22338'],
+      [2, 'Contact', '  ravi   KUMAR '], [2, 'Phone', '+91 98480 11111'],
+    ])
 
     const events = await consentEvents(user, lead.companyId)
     expect(events).toEqual([
       { event: 'exported', company_id: lead.companyId, contact_id: lead.contactId, contact_point_id: null, note: null },
     ])
+  })
+})
+
+describe('readOpenTasks', () => {
+  it("hides a DND company's open tasks and shows them again when DND is lifted", async () => {
+    const user = await newUser('privacy-tasks')
+    const { companyId } = await seedLead(user)
+    const taskId = await insertId(user, 'tasks', {
+      company_id: companyId, type: 'callback', title: 'Call back', due_at: '2026-11-02T04:00:00Z',
+    })
+    const openIds = async () => (await readOpenTasks(user.client, user.workspaceId, NOW)).map((task) => task.id)
+    expect(await openIds()).toContain(taskId)
+
+    await setCompanyDnd(user.client, user.workspaceId, companyId, true)
+    expect(await openIds()).not.toContain(taskId)
+
+    await setCompanyDnd(user.client, user.workspaceId, companyId, false)
+    expect(await openIds()).toContain(taskId)
   })
 })
 

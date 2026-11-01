@@ -1,8 +1,8 @@
 'use client'
 
 /**
- * One phone number's "who can see this" choice (everyone in the workspace /
- * only the owner) in the PrivacyMenu. Calls the setPointVisibility server
+ * One phone number's "who can see this" choice in the PrivacyMenu. Only
+ * "everyone in the workspace" is offered until RLS enforces owner_only. Calls the setPointVisibility server
  * action, which validates the value again, and refreshes the page data.
  */
 import { useRouter } from 'next/navigation'
@@ -42,7 +42,8 @@ export function PointVisibilitySelect({ point }: { point: LeadPoint }) {
         onChange={(event) => change(event.target.value)}
       >
         <option value="workspace">Everyone in the workspace</option>
-        <option value="owner_only">Only the owner</option>
+        {/* "Only the owner" returns once RLS enforces owner_only; until then it is shown only for a number already set to it. */}
+        {point.visibility === 'owner_only' && <option value="owner_only">Only the owner (not enforced yet)</option>}
       </select>
       {error && <p role="alert" className="break-words text-sm sm:col-span-2">{error}</p>}
     </div>

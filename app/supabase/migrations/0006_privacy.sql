@@ -8,7 +8,8 @@
 -- set_company_dnd and erase_contact each run in one transaction, SECURITY
 -- INVOKER, so row-level security applies to every statement. Errors read
 -- "[<function>] <step> failed: ..." and name only record ids, never personal data.
--- Callers: src/lib/privacy/setDnd.ts and src/lib/privacy/eraseContact.ts.
+-- Callers: src/lib/privacy/setDnd.ts, src/lib/privacy/eraseContact.ts and
+-- (contact_import_cells, read-only) src/lib/privacy/readContactExport.ts.
 
 alter table public.consent_log
   add column company_id uuid,
@@ -59,21 +60,109 @@ revoke execute on function public.set_company_dnd(uuid, uuid, boolean, text) fro
 grant execute on function public.set_company_dnd(uuid, uuid, boolean, text) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
+-- Import-row scrubbing helpers (used by erase_contact step 3)
+-- ---------------------------------------------------------------------------
+-- A raw CSV cell is "the person's" when its digits contain one of their
+-- numbers (last 9 digits, at least 7), or when the whole cell is their name
+-- (case and spacing ignored). Names never match part of a cell, so a short
+-- name such as "Sai" does not blank "Sai Dental Clinic".
+
+create function public.import_cell_has_number(p_cell text, p_tails text[])
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select exists (
+    select 1 from unnest(p_tails) as tail(digits)
+    where length(tail.digits) >= 7
+      and strpos(regexp_replace(p_cell, '\D', '', 'g'), tail.digits) > 0
+  );
+$$;
+
+-- Lower case, trimmed, inner spaces collapsed: "  Ravi   KUMAR " -> "ravi kumar".
+create function public.normalise_name(p_text text)
+returns text
+language sql
+immutable
+set search_path = ''
+as $$
+  select regexp_replace(lower(btrim(p_text)), '\s+', ' ', 'g');
+$$;
+
+-- p_names must already be normalised (normalise_name).
+create function public.import_cell_is_name(p_cell text, p_names text[])
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select public.normalise_name(p_cell) = any (p_names);
+$$;
+
+-- True when any string cell of the row holds one of the numbers.
+create function public.import_row_has_number(p_raw jsonb, p_tails text[])
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select exists (
+    select 1 from jsonb_each(p_raw) as cell
+    where jsonb_typeof(cell.value) = 'string'
+      and public.import_cell_has_number(cell.value #>> '{}', p_tails)
+  );
+$$;
+
+-- The row with every matching string cell replaced by "[erased]".
+create function public.scrub_import_cells(p_raw jsonb, p_tails text[], p_names text[])
+returns jsonb
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(jsonb_object_agg(cell.key, case
+    when jsonb_typeof(cell.value) <> 'string' then cell.value
+    when public.import_cell_has_number(cell.value #>> '{}', p_tails) then to_jsonb('[erased]'::text)
+    when public.import_cell_is_name(cell.value #>> '{}', p_names) then to_jsonb('[erased]'::text)
+    else cell.value
+  end), '{}'::jsonb)
+  from jsonb_each(p_raw) as cell;
+$$;
+
+revoke execute on function public.normalise_name(text) from public, anon;
+revoke execute on function public.import_cell_has_number(text, text[]) from public, anon;
+revoke execute on function public.import_cell_is_name(text, text[]) from public, anon;
+revoke execute on function public.import_row_has_number(jsonb, text[]) from public, anon;
+revoke execute on function public.scrub_import_cells(jsonb, text[], text[]) from public, anon;
+grant execute on function public.normalise_name(text) to authenticated, service_role;
+grant execute on function public.import_cell_has_number(text, text[]) to authenticated, service_role;
+grant execute on function public.import_cell_is_name(text, text[]) to authenticated, service_role;
+grant execute on function public.import_row_has_number(jsonb, text[]) to authenticated, service_role;
+grant execute on function public.scrub_import_cells(jsonb, text[], text[]) to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
 -- erase_contact: remove one person's numbers and personal fields, keep the
 -- company and an anonymised timeline, log erased
 -- ---------------------------------------------------------------------------
 --
 -- Steps, in order:
---   1. anonymise the person's activities (linked by contact or by one of their
+--   1. note the voice-note audio paths of the person's activities (returned,
+--      so the caller can remove the files from the voice-notes bucket);
+--   2. anonymise those activities (linked by contact or by one of their
 --      numbers): body cleared, metadata replaced by an erased marker;
---   2. clear who_answered on those calls and the quotes on their pain points;
---   3. blank import_rows cells of the company that hold one of the numbers
---      (last 9 digits) or the name / name_latin;
---   4. delete the person's numbers, then the contact row;
---   5. log erased with company_id and contact_id.
+--   3. clear the free text on their calls (who_answered, lost_reason) and
+--      pain points (quote, quote_en, current_tool, frequency);
+--   4. scrub import_rows: the company's rows and any row holding one of the
+--      numbers (skipped and failed rows too) - see scrub_import_cells;
+--   5. move the consent history of the numbers onto contact_id / company_id,
+--      so it is not orphaned when the numbers go;
+--   6. delete the person's numbers, then the contact row;
+--   7. log erased with company_id and contact_id.
+-- Returns the voice-note storage paths (may be empty).
 
 create function public.erase_contact(p_workspace_id uuid, p_contact_id uuid)
-returns void
+returns text[]
 language plpgsql
 security invoker
 set search_path = ''
@@ -84,6 +173,7 @@ declare
   v_point_ids uuid[];
   v_number_tails text[];
   v_activity_ids uuid[];
+  v_audio_paths text[];
 begin
   if not public.is_member(p_workspace_id) then
     raise exception '[erase_contact] check membership failed: not a member of workspace %', p_workspace_id
@@ -91,7 +181,7 @@ begin
   end if;
 
   select k.company_id,
-         array_remove(array[lower(btrim(k.name)), lower(btrim(k.name_latin))], null)
+         array_remove(array[public.normalise_name(k.name), public.normalise_name(k.name_latin)], null)
     into v_company_id, v_names
   from public.contacts k
   where k.workspace_id = p_workspace_id and k.id = p_contact_id;
@@ -110,43 +200,39 @@ begin
   where a.workspace_id = p_workspace_id
     and (a.contact_id = p_contact_id or a.contact_point_id = any (v_point_ids));
 
-  -- 1. Anonymised timeline: the row (type, time, company) stays, the content goes.
+  -- 1. Audio files: the path is in the metadata that step 2 replaces.
+  select coalesce(array_agg(a.metadata ->> 'storagePath'), '{}') into v_audio_paths
+  from public.activities a
+  where a.workspace_id = p_workspace_id and a.id = any (v_activity_ids)
+    and a.type = 'voice_note' and a.metadata ->> 'storagePath' is not null;
+
+  -- 2. Anonymised timeline: the row (type, time, company) stays, the content goes.
   update public.activities a
   set body = null,
       metadata = jsonb_build_object('erased', true, 'erasedContactId', p_contact_id)
   where a.workspace_id = p_workspace_id and a.id = any (v_activity_ids);
 
-  -- 2. Free text on the call and pain-point rows of those activities.
+  -- 3. Free text on the call and pain-point rows of those activities.
   update public.calls c
-  set who_answered = null
+  set who_answered = null, lost_reason = null
   where c.workspace_id = p_workspace_id and c.activity_id = any (v_activity_ids);
 
   update public.pain_points pp
-  set quote = null, quote_en = null
+  set quote = null, quote_en = null, current_tool = null, frequency = null
   where pp.workspace_id = p_workspace_id and pp.activity_id = any (v_activity_ids);
 
-  -- 3. The raw CSV copy of the lead still holds the number and name.
+  -- 4. The raw CSV copies of the lead still hold the number and name.
   update public.import_rows r
-  set raw = (
-    select coalesce(jsonb_object_agg(cell.key, case
-      when jsonb_typeof(cell.value) = 'string' and (
-        exists (
-          select 1 from unnest(v_number_tails) as tail(digits)
-          where length(tail.digits) >= 7
-            and strpos(regexp_replace(cell.value #>> '{}', '\D', '', 'g'), tail.digits) > 0
-        )
-        or exists (
-          select 1 from unnest(v_names) as person(name)
-          where length(person.name) >= 3 and strpos(lower(cell.value #>> '{}'), person.name) > 0
-        )
-      ) then to_jsonb('[erased]'::text)
-      else cell.value
-    end), '{}'::jsonb)
-    from jsonb_each(r.raw) as cell
-  )
-  where r.workspace_id = p_workspace_id and r.company_id = v_company_id;
+  set raw = public.scrub_import_cells(r.raw, v_number_tails, v_names)
+  where r.workspace_id = p_workspace_id
+    and (r.company_id = v_company_id or public.import_row_has_number(r.raw, v_number_tails));
 
-  -- 4. Numbers first (their activities are already anonymised), then the person.
+  -- 5. Per-number consent history keeps saying whose it was.
+  update public.consent_log l
+  set contact_id = p_contact_id, company_id = coalesce(l.company_id, v_company_id)
+  where l.workspace_id = p_workspace_id and l.contact_point_id = any (v_point_ids);
+
+  -- 6. Numbers first (their activities are already anonymised), then the person.
   delete from public.contact_points p
   where p.workspace_id = p_workspace_id and p.id = any (v_point_ids);
 
@@ -156,11 +242,52 @@ begin
     raise exception '[erase_contact] delete contact % failed: row was not deleted', p_contact_id;
   end if;
 
-  -- 5. The record of the erasure, without any personal data.
+  -- 7. The record of the erasure, without any personal data.
   insert into public.consent_log (workspace_id, company_id, contact_id, event)
   values (p_workspace_id, v_company_id, p_contact_id, 'erased');
+
+  return v_audio_paths;
 end;
 $$;
 
 revoke execute on function public.erase_contact(uuid, uuid) from public, anon;
 grant execute on function public.erase_contact(uuid, uuid) to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- contact_import_cells: the raw import cells that hold one person's data
+-- ---------------------------------------------------------------------------
+-- The same rows and cells erase_contact step 4 would blank, for the data
+-- export. Read-only, SECURITY INVOKER. Caller: src/lib/privacy/readContactExport.ts.
+
+create function public.contact_import_cells(p_workspace_id uuid, p_contact_id uuid)
+returns table (import_row_id uuid, batch_id uuid, row_number integer, cell_key text, cell_value text)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  with person as (
+    select k.company_id,
+           array_remove(array[public.normalise_name(k.name), public.normalise_name(k.name_latin)], null) as names,
+           coalesce((
+             select array_agg(right(regexp_replace(p.e164, '\D', '', 'g'), 9))
+             from public.contact_points p
+             where p.workspace_id = p_workspace_id and p.contact_id = k.id
+           ), '{}') as tails
+    from public.contacts k
+    where k.workspace_id = p_workspace_id and k.id = p_contact_id
+  )
+  select r.id, r.batch_id, r.row_number, cell.key, cell.value #>> '{}'
+  from person
+  join public.import_rows r
+    on r.workspace_id = p_workspace_id
+   and (r.company_id = person.company_id or public.import_row_has_number(r.raw, person.tails))
+  cross join lateral jsonb_each(r.raw) as cell
+  where jsonb_typeof(cell.value) = 'string'
+    and (public.import_cell_has_number(cell.value #>> '{}', person.tails)
+         or public.import_cell_is_name(cell.value #>> '{}', person.names))
+  order by r.batch_id, r.row_number, cell.key;
+$$;
+
+revoke execute on function public.contact_import_cells(uuid, uuid) from public, anon;
+grant execute on function public.contact_import_cells(uuid, uuid) to authenticated, service_role;

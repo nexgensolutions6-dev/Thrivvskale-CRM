@@ -511,8 +511,22 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "erase_contact":
-{ Args: { "p_contact_id": string,"p_workspace_id": string }; Returns: undefined
+            "contact_import_cells":
+{ Args: { "p_contact_id": string,"p_workspace_id": string }; Returns: {
+              "batch_id": string,"cell_key": string,"cell_value": string,"import_row_id": string,"row_number": number
+            }[]
+                           },
+"erase_contact":
+{ Args: { "p_contact_id": string,"p_workspace_id": string }; Returns: (string)[]
+                           },
+"import_cell_has_number":
+{ Args: { "p_cell": string,"p_tails": (string)[] }; Returns: boolean
+                           },
+"import_cell_is_name":
+{ Args: { "p_cell": string,"p_names": (string)[] }; Returns: boolean
+                           },
+"import_row_has_number":
+{ Args: { "p_raw": Json,"p_tails": (string)[] }; Returns: boolean
                            },
 "is_member":
 { Args: { "ws": string }; Returns: boolean
@@ -524,6 +538,12 @@ isOneToOne: false
 { Args: { "p_client_id": string,"p_company_id": string,"p_contact_id"?: string,"p_contact_point_id": string,"p_duration_is_estimate": boolean,"p_duration_seconds"?: number,"p_lost_reason"?: string,"p_mix_used"?: (Database["public"]['Enums']["lang_code"])[],"p_next_action"?: Json,"p_next_mix_profile"?: string,"p_objection_ids"?: (string)[],"p_occurred_at"?: string,"p_opener_id"?: string,"p_outcome": Database["public"]['Enums']["call_outcome"],"p_pain_point"?: Json,"p_workspace_id": string }; Returns: {
               "call_id": string,"duplicate": boolean
             }[]
+                           },
+"normalise_name":
+{ Args: { "p_text": string }; Returns: string
+                           },
+"scrub_import_cells":
+{ Args: { "p_names": (string)[],"p_raw": Json,"p_tails": (string)[] }; Returns: Json
                            },
 "search_leads":
 { Args: { "lim"?: number,"q": string,"ws": string }; Returns: {
