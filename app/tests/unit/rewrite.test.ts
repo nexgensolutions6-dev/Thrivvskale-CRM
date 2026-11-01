@@ -34,6 +34,7 @@ function fakeDb(rows: Row[]): SupabaseClient<Database> {
       select: () => query,
       eq: (column: string, value: unknown) => (filters.push((row) => row[column] === value), query),
       in: (column: string, values: unknown[]) => (filters.push((row) => values.includes(row[column])), query),
+      is: (column: string, value: unknown) => (filters.push((row) => (row[column] ?? null) === value), query),
       not: (column: string, operator: string, value: unknown) => {
         if (operator !== 'is') throw new Error(`fakeDb: .not supports only 'is', got ${operator}`)
         return (filters.push((row) => row[column] !== value), query)
@@ -167,6 +168,12 @@ describe('example selection', () => {
     expect(sent).toContain('Telugu 1')
     expect(sent).not.toContain('Telugu 2')
     expect(sent).not.toContain('Telugu 3')
+  })
+
+  it('leaves out company-specific approved openers', async () => {
+    const sent = await sentPrompt([...approvedPair(1), ...approvedPair(2, { company_id: 'co-1' })])
+    expect(sent).toContain('Telugu 1')
+    expect(sent).not.toContain('Telugu 2')
   })
 
   it('uses only the 5 most recent approved variants', async () => {

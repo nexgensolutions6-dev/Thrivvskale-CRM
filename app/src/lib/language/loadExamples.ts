@@ -25,6 +25,7 @@ export async function loadExamples(
     .eq('source', 'ai_approved')
     .eq('mix', toMixText(mix))
     .eq('script', script)
+    .is('company_id', null)
     .not('parent_variant_id', 'is', null)
     .order('updated_at', { ascending: false })
     .limit(EXAMPLE_COUNT)
