@@ -1,7 +1,7 @@
 /**
  * /leads/[id] - the lead workspace: header (Maps, website chip), why call,
- * what to sell, opener picker, people and numbers, and the Timeline / Tasks
- * tabs. Loads the lead for the signed-in user's own workspace (getLead calls
+ * what to sell, opener picker, people and numbers, privacy (DND, erase,
+ * export), and the Timeline / Tasks tabs. Loads the lead for the signed-in user's own workspace (getLead calls
  * getSessionWorkspace itself); an unknown or foreign id is a 404. The (app)
  * layout supplies <main>.
  */
@@ -12,6 +12,7 @@ import { LeadHeader } from '@/components/lead/LeadHeader'
 import { LeadTabs } from '@/components/lead/LeadTabs'
 import { OpenerPicker } from '@/components/lead/OpenerPicker'
 import { PeoplePanel } from '@/components/lead/PeoplePanel'
+import { PrivacyMenu } from '@/components/lead/PrivacyMenu'
 import { WhatToSell } from '@/components/lead/WhatToSell'
 import { WhyCall } from '@/components/lead/WhyCall'
 import { getLead } from '@/lib/leads/getLead'
@@ -50,6 +51,9 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
       </Surface>
       <Surface level="L2" className="min-w-0 p-4 sm:p-6">
         <PeoplePanel companyId={view.company.id} contacts={view.contacts} points={view.points} />
+      </Surface>
+      <Surface level="L2" className="min-w-0 p-4 sm:p-6">
+        <PrivacyMenu companyId={view.company.id} dnd={view.company.dnd} contacts={view.contacts} points={view.points} />
       </Surface>
       <Surface level="L2" className="min-w-0 p-4 sm:p-6">
         <LeadTabs companyId={view.company.id} activities={view.activities} tasks={view.tasks} />

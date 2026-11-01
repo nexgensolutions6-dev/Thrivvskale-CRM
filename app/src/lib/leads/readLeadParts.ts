@@ -57,7 +57,7 @@ export async function readContacts(scope: LeadScope): Promise<LeadContact[]> {
 export async function readPoints(scope: LeadScope): Promise<LeadPoint[]> {
   const result = await scope.db
     .from('contact_points')
-    .select('id, contact_id, e164, kind, wa_status')
+    .select('id, contact_id, e164, kind, wa_status, visibility')
     .eq('workspace_id', scope.workspaceId)
     .eq('company_id', scope.companyId)
     .order('created_at')
@@ -68,6 +68,7 @@ export async function readPoints(scope: LeadScope): Promise<LeadPoint[]> {
     e164: row.e164,
     kind: row.kind,
     waStatus: row.wa_status,
+    visibility: row.visibility,
   }))
 }
 

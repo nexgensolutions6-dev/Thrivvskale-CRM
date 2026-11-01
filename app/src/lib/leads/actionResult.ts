@@ -6,7 +6,7 @@
  */
 export type ActionResult = { ok: true } | { ok: false; message: string }
 
-export function failureResult(action: string, error: unknown): ActionResult {
+export function failureResult(action: string, error: unknown): { ok: false; message: string } {
   const message = error instanceof Error ? error.message : 'Something went wrong.'
   console.error(`[${action}] ${message}`, error)
   return { ok: false, message }

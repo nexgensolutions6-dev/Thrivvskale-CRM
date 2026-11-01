@@ -1,0 +1,227 @@
+/**
+ * Database tests for the privacy actions: setCompanyDnd (drops the company from
+ * the ranked queue, logs opted_out / consented), eraseContactData (no number,
+ * name or name_latin left; company and anonymised activities kept; logs
+ * erased), exportContactData (everything held, logs exported) and
+ * setContactPointVisibility. Also checks workspace scoping and input
+ * validation. Local Supabase stack only.
+ */
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { loadQueueItems } from '@/lib/call/loadQueueItems'
+import { eraseContactData } from '@/lib/privacy/eraseContact'
+import { exportContactData } from '@/lib/privacy/exportContact'
+import { setCompanyDnd } from '@/lib/privacy/setDnd'
+import { setContactPointVisibility } from '@/lib/privacy/setPointVisibility'
+import { rankQueue } from '@/lib/queue/rank'
+import { adminClient, cleanup, createUserWithWorkspace, localStack, type LocalStack, type TestUser } from './support'
+
+const SETUP_TIMEOUT = 120_000
+const NOW = new Date('2026-11-02T05:00:00Z')
+let stack: LocalStack
+const users: TestUser[] = []
+
+beforeAll(() => {
+  stack = localStack()
+}, SETUP_TIMEOUT)
+
+afterAll(async () => {
+  if (stack) await cleanup(stack, users)
+}, SETUP_TIMEOUT)
+
+async function newUser(label: string): Promise<TestUser> {
+  const user = await createUserWithWorkspace(stack, label)
+  users.push(user)
+  return user
+}
+
+async function insertId(user: TestUser, table: 'companies' | 'contacts' | 'contact_points' | 'activities', row: object): Promise<string> {
+  const result = await user.client.from(table).insert({ workspace_id: user.workspaceId, ...row } as never).select('id').single()
+  if (result.error) throw result.error
+  return (result.data as { id: string }).id
+}
+
+/** A company with one person (two numbers), one company line, a call, a note and an import row. */
+async function seedLead(user: TestUser) {
+  const companyId = await insertId(user, 'companies', { name: 'Sai Dental Clinic', base_score: 50 })
+  const contactId = await insertId(user, 'contacts', {
+    company_id: companyId, name: 'రవి కుమార్', name_latin: 'Ravi Kumar', role: 'owner',
+    languages: ['te', 'en'], mix_profile: 'te+en', notes: 'Prefers calls after 6pm',
+  })
+  const mobileId = await insertId(user, 'contact_points', {
+    company_id: companyId, contact_id: contactId, e164: '+919848022338', kind: 'personal',
+  })
+  const secondId = await insertId(user, 'contact_points', {
+    company_id: companyId, contact_id: contactId, e164: '+919848011111', kind: 'business',
+  })
+  const lineId = await insertId(user, 'contact_points', {
+    company_id: companyId, contact_id: null, e164: '+914023456789', kind: 'landline',
+  })
+  const callActivityId = await insertId(user, 'activities', {
+    company_id: companyId, contact_id: contactId, contact_point_id: mobileId, type: 'call',
+    body: 'Spoke to Ravi on 98480 22338', metadata: { event: 'call', phone: '+919848022338' },
+  })
+  const call = await user.client.from('calls').insert({
+    workspace_id: user.workspaceId, activity_id: callActivityId, outcome: 'interested', who_answered: 'Ravi',
+  })
+  if (call.error) throw call.error
+  const noteActivityId = await insertId(user, 'activities', {
+    company_id: companyId, contact_id: contactId, type: 'note', body: 'Ravi wants a booking page',
+  })
+  const companyNoteId = await insertId(user, 'activities', {
+    company_id: companyId, type: 'note', body: 'Clinic opens at 10',
+  })
+  const batch = await user.client.from('import_batches')
+    .insert({ workspace_id: user.workspaceId, file_name: 'leads.csv', row_count: 1 }).select('id').single()
+  if (batch.error) throw batch.error
+  const importRow = await user.client.from('import_rows').insert({
+    workspace_id: user.workspaceId, batch_id: batch.data.id, row_number: 1, company_id: companyId,
+    raw: { Company: 'Sai Dental Clinic', Contact: 'Ravi Kumar', Phone: '98480 22338', Area: 'Ameerpet' },
+  })
+  if (importRow.error) throw importRow.error
+  return { companyId, contactId, mobileId, secondId, lineId, callActivityId, noteActivityId, companyNoteId, batchId: batch.data.id }
+}
+
+async function consentEvents(user: TestUser, companyId: string) {
+  const result = await user.client.from('consent_log')
+    .select('event, company_id, contact_id, contact_point_id, note').eq('company_id', companyId).order('created_at')
+  if (result.error) throw result.error
+  return result.data
+}
+
+async function rankedIds(user: TestUser): Promise<string[]> {
+  const items = await loadQueueItems(user.client, user.workspaceId)
+  return rankQueue(items, { now: NOW }).map((item) => item.companyId)
+}
+
+describe('setCompanyDnd', () => {
+  it('drops the company from the ranked queue and logs opted_out, then consented', async () => {
+    const user = await newUser('privacy-dnd')
+    const { companyId } = await seedLead(user)
+    expect(await rankedIds(user)).toContain(companyId)
+
+    await setCompanyDnd(user.client, user.workspaceId, companyId, true, 'Asked not to be called')
+    const loaded = (await loadQueueItems(user.client, user.workspaceId)).find((item) => item.companyId === companyId)
+    expect(loaded?.dnd).toBe(true)
+    expect(await rankedIds(user)).not.toContain(companyId)
+
+    await setCompanyDnd(user.client, user.workspaceId, companyId, false)
+    expect(await rankedIds(user)).toContain(companyId)
+
+    const events = await consentEvents(user, companyId)
+    expect(events.map((row) => row.event)).toEqual(['opted_out', 'consented'])
+    expect(events[0]).toMatchObject({ company_id: companyId, note: 'Asked not to be called' })
+  })
+})
+
+describe('eraseContactData', () => {
+  it('leaves no number, name or name_latin, keeps the company and anonymised activities, logs erased', async () => {
+    const user = await newUser('privacy-erase')
+    const lead = await seedLead(user)
+
+    await eraseContactData(user.client, user.workspaceId, lead.contactId)
+
+    const contact = await user.client.from('contacts').select('id').eq('id', lead.contactId)
+    expect(contact.data).toEqual([])
+    const points = await user.client.from('contact_points').select('id, e164').eq('company_id', lead.companyId)
+    expect(points.data).toEqual([{ id: lead.lineId, e164: '+914023456789' }])
+
+    const company = await user.client.from('companies').select('id, name').eq('id', lead.companyId).single()
+    expect(company.data?.name).toBe('Sai Dental Clinic')
+
+    const activities = await user.client.from('activities')
+      .select('id, type, body, metadata, contact_id, contact_point_id').eq('company_id', lead.companyId)
+    const byId = new Map(activities.data?.map((row) => [row.id, row]))
+    for (const id of [lead.callActivityId, lead.noteActivityId]) {
+      expect(byId.get(id)).toMatchObject({
+        body: null, contact_id: null, contact_point_id: null,
+        metadata: { erased: true, erasedContactId: lead.contactId },
+      })
+    }
+    expect(byId.get(lead.callActivityId)?.type).toBe('call')
+    expect(byId.get(lead.companyNoteId)?.body).toBe('Clinic opens at 10')
+
+    const call = await user.client.from('calls').select('outcome, who_answered').eq('activity_id', lead.callActivityId).single()
+    expect(call.data).toEqual({ outcome: 'interested', who_answered: null })
+
+    const raw = await user.client.from('import_rows').select('raw').eq('batch_id', lead.batchId).single()
+    expect(raw.data?.raw).toEqual({ Company: 'Sai Dental Clinic', Contact: '[erased]', Phone: '[erased]', Area: 'Ameerpet' })
+
+    const events = await consentEvents(user, lead.companyId)
+    expect(events).toEqual([
+      { event: 'erased', company_id: lead.companyId, contact_id: lead.contactId, contact_point_id: null, note: null },
+    ])
+  })
+})
+
+describe('exportContactData', () => {
+  it('returns the contact, numbers, activities and notes, and logs exported', async () => {
+    const user = await newUser('privacy-export')
+    const lead = await seedLead(user)
+
+    const exported = await exportContactData(user.client, user.workspaceId, lead.contactId)
+    const text = JSON.stringify(exported)
+
+    expect(exported.contact).toMatchObject({ id: lead.contactId, name: 'రవి కుమార్', name_latin: 'Ravi Kumar', notes: 'Prefers calls after 6pm' })
+    expect(exported.contactPoints.map((point) => point.e164).sort()).toEqual(['+919848011111', '+919848022338'])
+    expect(exported.activities.map((row) => row.id).sort()).toEqual([lead.callActivityId, lead.noteActivityId].sort())
+    expect(text).toContain('Ravi wants a booking page')
+    expect(exported.calls).toEqual([expect.objectContaining({ activity_id: lead.callActivityId, who_answered: 'Ravi' })])
+    expect(text).not.toContain('+914023456789')
+    expect(text).not.toContain('Clinic opens at 10')
+
+    const events = await consentEvents(user, lead.companyId)
+    expect(events).toEqual([
+      { event: 'exported', company_id: lead.companyId, contact_id: lead.contactId, contact_point_id: null, note: null },
+    ])
+  })
+})
+
+describe('setContactPointVisibility', () => {
+  it('sets owner_only and back to workspace', async () => {
+    const user = await newUser('privacy-visibility')
+    const lead = await seedLead(user)
+    await setContactPointVisibility(user.client, user.workspaceId, lead.mobileId, 'owner_only')
+    const read = () => user.client.from('contact_points').select('visibility').eq('id', lead.mobileId).single()
+    expect((await read()).data?.visibility).toBe('owner_only')
+    await setContactPointVisibility(user.client, user.workspaceId, lead.mobileId, 'workspace')
+    expect((await read()).data?.visibility).toBe('workspace')
+  })
+})
+
+describe('workspace scoping and input checks', () => {
+  it('refuses records of another workspace and leaves them untouched', async () => {
+    const owner = await newUser('privacy-owner')
+    const stranger = await newUser('privacy-stranger')
+    const lead = await seedLead(owner)
+
+    await expect(setCompanyDnd(stranger.client, stranger.workspaceId, lead.companyId, true)).rejects.toThrow(lead.companyId)
+    await expect(setCompanyDnd(stranger.client, owner.workspaceId, lead.companyId, true)).rejects.toThrow('[set_company_dnd]')
+    await expect(eraseContactData(stranger.client, stranger.workspaceId, lead.contactId)).rejects.toThrow(lead.contactId)
+    await expect(eraseContactData(stranger.client, owner.workspaceId, lead.contactId)).rejects.toThrow('[erase_contact]')
+    await expect(exportContactData(stranger.client, stranger.workspaceId, lead.contactId)).rejects.toThrow(lead.contactId)
+    await expect(exportContactData(stranger.client, owner.workspaceId, lead.contactId)).rejects.toThrow(lead.contactId)
+    await expect(setContactPointVisibility(stranger.client, stranger.workspaceId, lead.mobileId, 'owner_only')).rejects.toThrow(lead.mobileId)
+
+    const admin = adminClient(stack)
+    const company = await admin.from('companies').select('dnd').eq('id', lead.companyId).single()
+    expect(company.data?.dnd).toBe(false)
+    const contact = await admin.from('contacts').select('name_latin').eq('id', lead.contactId).single()
+    expect(contact.data?.name_latin).toBe('Ravi Kumar')
+    const point = await admin.from('contact_points').select('visibility').eq('id', lead.mobileId).single()
+    expect(point.data?.visibility).toBe('workspace')
+    const log = await admin.from('consent_log').select('id').eq('workspace_id', owner.workspaceId)
+    expect(log.data).toEqual([])
+  })
+
+  it('rejects malformed input before touching the database', async () => {
+    const user = await newUser('privacy-input')
+    const lead = await seedLead(user)
+    const ws = user.workspaceId
+    await expect(setCompanyDnd(user.client, ws, 'not-a-uuid', true)).rejects.toThrow('[privacy/validate]')
+    await expect(setCompanyDnd(user.client, ws, lead.companyId, 'yes' as unknown as boolean)).rejects.toThrow('dnd')
+    await expect(setCompanyDnd(user.client, ws, lead.companyId, true, 42 as unknown as string)).rejects.toThrow('note')
+    await expect(eraseContactData(user.client, ws, { id: lead.contactId } as unknown as string)).rejects.toThrow('[privacy/validate]')
+    await expect(exportContactData(user.client, ws, '')).rejects.toThrow('[privacy/validate]')
+    await expect(setContactPointVisibility(user.client, ws, lead.mobileId, 'public' as never)).rejects.toThrow('visibility')
+  })
+})

@@ -45,8 +45,8 @@ describe('buildOpenerChoices', () => {
     const choices = buildOpenerChoices(view({
       contacts: [contact({ id: 'c1', nameLatin: 'Ramesh' })],
       points: [
-        { id: 'p1', contactId: 'c1', e164: '+919866139900', kind: 'business', waStatus: 'unconfirmed' },
-        { id: 'p2', contactId: null, e164: '+914023456789', kind: 'landline', waStatus: 'landline' },
+        { id: 'p1', contactId: 'c1', e164: '+919866139900', kind: 'business', waStatus: 'unconfirmed', visibility: 'workspace' },
+        { id: 'p2', contactId: null, e164: '+914023456789', kind: 'landline', waStatus: 'landline', visibility: 'workspace' },
       ],
     }))
     expect(choices.points.map((p) => p.owner)).toEqual(['Ramesh', 'company line'])

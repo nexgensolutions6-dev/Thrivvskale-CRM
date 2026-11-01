@@ -121,17 +121,23 @@ isOneToOne: false
                   ]
                 },"consent_log": {
                   Row: {
-                    "at": string,"contact_point_id": string | null,"created_at": string,"event": Database["public"]['Enums']["consent_event"],"id": string,"note": string | null,"updated_at": string,"workspace_id": string
+                    "at": string,"company_id": string | null,"contact_id": string | null,"contact_point_id": string | null,"created_at": string,"event": Database["public"]['Enums']["consent_event"],"id": string,"note": string | null,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "at"?: string,"contact_point_id"?: string | null,"created_at"?: string,"event": Database["public"]['Enums']["consent_event"],"id"?: string,"note"?: string | null,"updated_at"?: string,"workspace_id": string
+                    "at"?: string,"company_id"?: string | null,"contact_id"?: string | null,"contact_point_id"?: string | null,"created_at"?: string,"event": Database["public"]['Enums']["consent_event"],"id"?: string,"note"?: string | null,"updated_at"?: string,"workspace_id": string
                   }
                   Update: {
-                    "at"?: string,"contact_point_id"?: string | null,"created_at"?: string,"event"?: Database["public"]['Enums']["consent_event"],"id"?: string,"note"?: string | null,"updated_at"?: string,"workspace_id"?: string
+                    "at"?: string,"company_id"?: string | null,"contact_id"?: string | null,"contact_point_id"?: string | null,"created_at"?: string,"event"?: Database["public"]['Enums']["consent_event"],"id"?: string,"note"?: string | null,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "consent_log_workspace_id_company_id_fkey"
+      columns: ["workspace_id","company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["workspace_id","id"]
+    },{
       foreignKeyName: "consent_log_workspace_id_contact_point_id_fkey"
       columns: ["workspace_id","contact_point_id"]
 isOneToOne: false
@@ -505,7 +511,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "is_member":
+            "erase_contact":
+{ Args: { "p_contact_id": string,"p_workspace_id": string }; Returns: undefined
+                           },
+"is_member":
 { Args: { "ws": string }; Returns: boolean
                            },
 "is_member_of_object_folder":
@@ -563,6 +572,9 @@ isOneToOne: false
       } },
 "search_match_score":
 { Args: { "hay": string,"needle": string }; Returns: number
+                           },
+"set_company_dnd":
+{ Args: { "p_company_id": string,"p_dnd": boolean,"p_note"?: string,"p_workspace_id": string }; Returns: undefined
                            }
           }
           Enums: {

@@ -28,6 +28,8 @@ export interface LeadPoint {
   e164: string
   kind: 'business' | 'personal' | 'landline'
   waStatus: WaStatus
+  /** Who may see the number; changed from the PrivacyMenu. */
+  visibility: 'owner_only' | 'workspace'
 }
 
 export interface LeadOpener {
