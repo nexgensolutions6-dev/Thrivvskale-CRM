@@ -12,7 +12,7 @@ older, unrelated app (`backend/`, `frontend/`, the root `README.md`); ignore it.
 
 ## Run it on your computer
 
-Needs Node 20.9 or newer (Node 22 recommended) and Docker (for the local database).
+Needs Node 22 (20.19 is the minimum) and Docker (for the local database).
 
 ```bash
 cd app
@@ -31,12 +31,14 @@ Sign-in emails from the local stack arrive in Mailpit at http://127.0.0.1:54324.
 | `npm run check` | typecheck + lint + unit tests (runs in CI) |
 | `npm run build` | the production build (runs in CI) |
 | `npm run test:db` | database tests; needs `npx supabase start` |
+| `npx playwright install chromium` | one-time download of the browser the e2e tests use |
 | `npm run test:e2e -- --workers=1` | browser tests; needs `npx supabase start` |
 
 Notes for the browser tests:
 
 - They run against the dev server (`next dev`), not `next start`: the glass design
-  fixture page only exists in dev. Playwright starts the server for you on port 3100.
+  fixture page is built in production too but returns 404 there. Playwright starts the server for you on port 3100.
+- The sign-in link (magic link) must open in the same browser that requested it; the tests do this in one page.
 - Use `--workers=1`. The local sign-in email limit is hit with more workers.
 - A cold first run takes several minutes (the dev server compiles each page on demand).
 - Not in CI: they need the local Supabase stack and the dev server.
@@ -110,7 +112,7 @@ commit or a screenshot.
    `NEXT_PUBLIC_` prefix.
 4. **USER ACTION** Deploy. Open the site, sign in with your email, open the link
    from the email. You should land on Today.
-5. Optional: Node version. The app runs on Node 20.9+. Consider setting the Vercel
+5. Optional: Node version. The app runs on Node 20.19+. Consider setting the Vercel
    project to Node 22 and, once on Node 22 everywhere (also your computer and CI),
    deleting the `ws` WebSocket fallback in
    `src/lib/supabase/node-websocket-fallback.ts` and the `ws` dependency.
@@ -151,7 +153,7 @@ commit or a screenshot.
    WhatsApp follow-up link. Try one outcome with the phone in airplane mode and
    confirm it sends when you are back online.
 
-5. **Run the browser tests once cold.** Before the first deploy run `timeout 600 npm run test:e2e -- --workers=1` on your computer (about 10 minutes) and confirm all pass. CI does not run them; if you later add them to CI, run them against a production build (`next build` + `next start`) where possible, noting the glass design fixture page only exists in dev.
+5. **Run the browser tests once cold.** Before the first deploy run `npm run test:e2e -- --workers=1` on your computer (about 10 minutes) and confirm all pass. CI does not run them; if you later add them to CI, run them against a production build (`next build` + `next start`) where possible, noting the glass design fixture page returns 404 in production.
 
 ### E. Phase 1 shipped
 

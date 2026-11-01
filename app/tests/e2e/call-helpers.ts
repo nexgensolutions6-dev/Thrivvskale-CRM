@@ -1,8 +1,6 @@
 /**
- * Shared steps for specs that drive the calling cockpit with a stubbed phone:
- * keep the tel: link on the page, then fake a return from the dialer after a
- * chosen time away, plus the workspace lookup. Used by call.spec.ts and golden-path.spec.ts. Needs
- * page.clock.install() to have run first (see call.spec.ts openCockpit).
+ * Shared cockpit steps for call.spec.ts and golden-path.spec.ts: stub the tel: link,
+ * fake a return from the dialer, look up a user's workspace. Needs page.clock.install() first.
  */
 import type { Page } from '@playwright/test'
 import { adminClient, localStack } from '../db/support'
@@ -10,8 +8,9 @@ import { adminClient, localStack } from '../db/support'
 /** The workspace of the user who signed in with `email`. Local stack only. */
 export async function workspaceIdOf(email: string): Promise<string> {
   const admin = adminClient(localStack())
-  const users = await admin.auth.admin.listUsers({ perPage: 1000 })
-  const user = users.data?.users.find((candidate) => candidate.email === email)
+  const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  if (error) throw new Error(`[e2e/call-helpers] workspaceIdOf could not list users for ${email}: ${error.message}`)
+  const user = data.users.find((candidate) => candidate.email === email)
   if (!user) throw new Error(`[e2e/call-helpers] workspaceIdOf: no user ${email}`)
   const member = await admin.from('members').select('workspace_id').eq('user_id', user.id).single()
   if (member.error) throw new Error(`[e2e/call-helpers] workspaceIdOf: find workspace of ${email} failed: ${member.error.message}`)

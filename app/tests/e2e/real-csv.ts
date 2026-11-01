@@ -18,8 +18,8 @@ export async function importRealCsv(page: Page): Promise<number> {
 
   const report = page.getByRole('region', { name: 'Import report' })
   await expect(report).toContainText('Inserted', { timeout: 120_000 })
-  const text = (await report.textContent()) ?? ''
-  const match = /Inserted(\d+)/.exec(text)
-  if (!match) throw new Error(`[e2e/real-csv] importRealCsv: no "Inserted<count>" in the report, got ${JSON.stringify(text)}`)
-  return Number(match[1])
+  const text = (await report.locator('dt:text-is("Inserted") + dd').textContent()) ?? ''
+  const count = Number(text.trim())
+  if (!Number.isInteger(count)) throw new Error(`[e2e/real-csv] importRealCsv: the "Inserted" value is not a number, got ${JSON.stringify(text)}`)
+  return count
 }

@@ -161,6 +161,8 @@ test.describe('App shell', () => {
   test('Ctrl+K opens the command palette, typing "leads" and Enter goes to Leads', async ({ page }) => {
     await page.setViewportSize(DESKTOP)
     await page.goto('/today')
+    // The shortcut listener attaches on hydration; a press before that is lost on a cold dev server.
+    await page.waitForLoadState('networkidle')
 
     await page.keyboard.press('Control+k')
     const palette = page.getByRole('dialog', { name: 'Command palette' })
@@ -179,6 +181,8 @@ test.describe('App shell', () => {
   test('Escape closes the palette and a click on a result runs it', async ({ page }) => {
     await page.setViewportSize(DESKTOP)
     await page.goto('/today')
+    // The shortcut listener attaches on hydration; a press before that is lost on a cold dev server.
+    await page.waitForLoadState('networkidle')
 
     await page.keyboard.press('Control+k')
     await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible()

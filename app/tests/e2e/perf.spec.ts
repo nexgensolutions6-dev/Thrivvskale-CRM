@@ -1,10 +1,7 @@
 /**
- * Release check (Task 19): on a slow device the lead list still scrolls
- * smoothly. Chromium only. CPU is throttled 4x through the DevTools protocol,
- * the browser reports 1 GB of memory so the glass system picks Lite on its own,
- * the real CSV is imported (297 leads, shown 50 per page), and every page of the
- * list is scrolled top to bottom while frame times are recorded. The median
- * frame must stay under 20 ms. Local stack only.
+ * Release check (Task 19): with CPU throttled 4x and 1 GB reported memory (Lite glass),
+ * every page of the real-CSV lead list scrolls with a median frame under 20 ms.
+ * Chromium only. Local stack only.
  */
 import { randomUUID } from 'node:crypto'
 import { expect, test, type Page } from '@playwright/test'
@@ -15,15 +12,22 @@ const CPU_SLOWDOWN = 4
 const MAX_MEDIAN_FRAME_MS = 20
 const PAGE_SIZE = 50
 const SCROLL_STEP_PX = 40
+const MIN_FRAMES_PER_PAGE = 5
+const STALL_MS = 10_000
 
 /** Scrolls to the bottom one step per frame, inside the page, and returns every frame time in ms. */
 async function scrollAndMeasure(page: Page): Promise<number[]> {
   return page.evaluate(
-    (step) =>
-      new Promise<number[]>((resolve) => {
+    ({ step, stallMs }) =>
+      new Promise<number[]>((resolve, reject) => {
         const frames: number[] = []
-        let last = performance.now()
+        const started = performance.now()
+        let last = started
         function onFrame(now: number) {
+          if (now - started > stallMs) {
+            reject(new Error(`[e2e/perf] scrollAndMeasure: not at the bottom after ${stallMs} ms and ${frames.length} frames`))
+            return
+          }
           frames.push(now - last)
           last = now
           const root = document.scrollingElement as Element
@@ -37,7 +41,7 @@ async function scrollAndMeasure(page: Page): Promise<number[]> {
         }
         requestAnimationFrame(onFrame)
       }),
-    SCROLL_STEP_PX,
+    { step: SCROLL_STEP_PX, stallMs: STALL_MS },
   )
 }
 
@@ -77,7 +81,9 @@ test.describe('Lead list performance', () => {
       await page.goto(`/leads?page=${number}`)
       await expect(page.locator('html')).toHaveAttribute('data-glass', 'lite')
       await expect(page.locator('.glass-row').first()).toBeVisible()
-      frames.push(...(await scrollAndMeasure(page)))
+      const pageFrames = await scrollAndMeasure(page)
+      expect(pageFrames.length, `frames recorded on lead page ${number} (list too short to scroll?)`).toBeGreaterThanOrEqual(MIN_FRAMES_PER_PAGE)
+      frames.push(...pageFrames)
     }
 
     const middle = median(frames)

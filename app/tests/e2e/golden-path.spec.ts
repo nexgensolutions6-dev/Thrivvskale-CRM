@@ -1,9 +1,6 @@
 /**
- * Release check (Task 19): the whole Phase 1 journey on the real CSV. Sign in,
- * import data/Thrivvskale_Leads_CRM_Import.csv, open the call queue, place a
- * STUBBED call (the tel: link never leaves the page), log "callback", see the
- * callback on Today, and build a Hinglish WhatsApp link (checked, never opened).
- * Local stack only.
+ * Release check (Task 19): sign in, import the real CSV, place a STUBBED call, log
+ * "callback", see it on Today, build a Hinglish WhatsApp link (never opened). Local stack only.
  */
 import { randomUUID } from 'node:crypto'
 import { expect, test } from '@playwright/test'
