@@ -8,27 +8,20 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import holidaysJson from '../../../supabase/seed/holidays.json'
 import type { Database } from '@/lib/db/types'
 import type { Holiday } from '@/lib/calendar/schedule'
+import { readWorkspaceCalendar } from '@/lib/calendar/readWorkspaceCalendar'
 import { loadLead } from '@/lib/leads/loadLead'
 import { rankQueue } from '@/lib/queue/rank'
-import { stepError } from '@/lib/step-error'
 import { loadObjections } from '@/lib/content/loadObjections'
 import { loadTemplates } from '@/lib/content/loadTemplates'
 import { buildCallLead } from './buildCallLead'
 import type { CallScreen } from './callScreen'
 import { loadQueueItems } from './loadQueueItems'
 
-const MODULE = 'loadCallScreen'
 /** Leads prepared per page load, so the cockpit can advance offline without one query per tap. */
 const BATCH_SIZE = 8
 const HOLIDAYS: Holiday[] = holidaysJson
 
 type Db = SupabaseClient<Database>
-
-async function readWorkspaceCalendar(db: Db, workspaceId: string) {
-  const result = await db.from('workspaces').select('working_days, home_state').eq('id', workspaceId).single()
-  if (result.error) throw stepError(MODULE, `read calendar of workspace ${workspaceId}`, result.error)
-  return result.data
-}
 
 export async function loadCallScreen(db: Db, workspaceId: string, now: Date): Promise<CallScreen> {
   const [items, workspace, objections, templates] = await Promise.all([

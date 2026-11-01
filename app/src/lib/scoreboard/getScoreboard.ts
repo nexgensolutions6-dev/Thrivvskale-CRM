@@ -1,21 +1,26 @@
 /**
  * `getScoreboard`: the day's call numbers, the targets in force that day and the
  * streak, from the scoreboard_daily view (Kolkata days). Uses the user's client,
- * so RLS applies. `day` is a Kolkata date (YYYY-MM-DD). Called by the Today page,
+ * so RLS applies. The streak steps over rest days (workspace working days and
+ * state holidays). `day` is a Kolkata date (YYYY-MM-DD). Called by the Today page,
  * the app layout (menu bar chip) and the DB tests.
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
+import holidaysJson from '../../../supabase/seed/holidays.json'
+import { isWorkingDay } from '@/lib/calendar/isWorkingDay'
 import { addDays } from '@/lib/calendar/kolkataDate'
+import { readWorkspaceCalendar } from '@/lib/calendar/readWorkspaceCalendar'
+import type { Holiday } from '@/lib/calendar/types'
 import type { Database } from '@/lib/db/types'
 import { stepError } from '@/lib/step-error'
 import { readTargetRows } from './readTargetRows'
-import { countStreak } from './streak'
+import { countStreak, STREAK_LOOKBACK_DAYS } from './streak'
 import { targetOn, type TargetRow } from './targetOn'
 import type { Scoreboard } from './types'
 
 const MODULE = 'getScoreboard'
-/** How far back a streak is counted; a longer streak shows as this many days. */
-const STREAK_LOOKBACK_DAYS = 365
+
+const HOLIDAYS: Holiday[] = holidaysJson
 
 type DayRow = Database['public']['Views']['scoreboard_daily']['Row']
 type Db = SupabaseClient<Database>
@@ -38,14 +43,19 @@ function daysMeetingCallTarget(rows: DayRow[], targetRows: TargetRow[]): Set<str
 }
 
 export async function getScoreboard(db: Db, workspaceId: string, day: string): Promise<Scoreboard> {
-  const [rows, targetRows] = await Promise.all([readDays(db, workspaceId, day), readTargetRows(db, workspaceId)])
+  const [rows, targetRows, calendar] = await Promise.all([
+    readDays(db, workspaceId, day),
+    readTargetRows(db, workspaceId),
+    readWorkspaceCalendar(db, workspaceId),
+  ])
+  const isRestDay = (ymd: string) => !isWorkingDay(ymd, calendar.home_state ?? '', HOLIDAYS, calendar.working_days)
   const today = rows.find((row) => row.day === day)
   return {
     calls: today?.dials ?? 0,
     connects: today?.connects ?? 0,
     conversations: today?.conversations ?? 0,
     demos: today?.meetings_booked ?? 0,
-    streakDays: countStreak(daysMeetingCallTarget(rows, targetRows), day),
+    streakDays: countStreak(daysMeetingCallTarget(rows, targetRows), day, isRestDay),
     targets: targetOn(targetRows, day),
   }
 }

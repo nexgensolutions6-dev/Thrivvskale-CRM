@@ -7,22 +7,40 @@ import { countStreak } from '@/lib/scoreboard/streak'
 import { targetOn, type TargetRow } from '@/lib/scoreboard/targetOn'
 import { validateTargets } from '@/lib/scoreboard/validateTargets'
 
+const noRestDays = () => false
+const sundayIsRest = (ymd: string) => new Date(`${ymd}T00:00:00Z`).getUTCDay() === 0
+
 describe('countStreak', () => {
   it('counts consecutive met days ending today', () => {
-    expect(countStreak(new Set(['2026-10-30', '2026-10-31', '2026-11-01']), '2026-11-01')).toBe(3)
+    expect(countStreak(new Set(['2026-10-30', '2026-10-31', '2026-11-01']), '2026-11-01', noRestDays)).toBe(3)
   })
 
   it('does not break when today is not met yet, it counts back from yesterday', () => {
-    expect(countStreak(new Set(['2026-10-30', '2026-10-31']), '2026-11-01')).toBe(2)
+    expect(countStreak(new Set(['2026-10-30', '2026-10-31']), '2026-11-01', noRestDays)).toBe(2)
   })
 
   it('breaks on a missed day', () => {
-    expect(countStreak(new Set(['2026-10-29', '2026-10-31', '2026-11-01']), '2026-11-01')).toBe(2)
+    expect(countStreak(new Set(['2026-10-29', '2026-10-31', '2026-11-01']), '2026-11-01', noRestDays)).toBe(2)
+  })
+
+  it('steps over an unmet Sunday: Monday to Saturday met across a Sunday counts 7', () => {
+    const met = new Set(['2026-10-24', '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31'])
+    expect(countStreak(met, '2026-10-31', sundayIsRest)).toBe(7)
+  })
+
+  it('steps over today when it is an unmet rest day, and still breaks on an unmet working day', () => {
+    expect(countStreak(new Set(['2026-10-30', '2026-10-31']), '2026-11-01', sundayIsRest)).toBe(2)
+    expect(countStreak(new Set(['2026-10-24', '2026-10-26', '2026-10-27', '2026-10-29', '2026-10-30', '2026-10-31']), '2026-10-31', sundayIsRest)).toBe(3)
+  })
+
+  it('stops at the 365 day lookback', () => {
+    const all = new Set(Array.from({ length: 400 }, (_, i) => new Date(Date.UTC(2026, 10, 1) - i * 86_400_000).toISOString().slice(0, 10)))
+    expect(countStreak(all, '2026-11-01', noRestDays)).toBe(366)
   })
 
   it('is 0 with no met days, or when yesterday and today are both missed', () => {
-    expect(countStreak(new Set(), '2026-11-01')).toBe(0)
-    expect(countStreak(new Set(['2026-10-29']), '2026-11-01')).toBe(0)
+    expect(countStreak(new Set(), '2026-11-01', noRestDays)).toBe(0)
+    expect(countStreak(new Set(['2026-10-29']), '2026-11-01', noRestDays)).toBe(0)
   })
 })
 
