@@ -1,0 +1,122 @@
+[
+  {
+    "serviceKey": "ai_website",
+    "title": "AI website",
+    "pitch": "We build you a fast, mobile-first website that answers customer questions on its own, collects enquiries day and night, and sends every lead straight to your WhatsApp. Most of your customers search on their phone before they call, and a site that loads slowly or looks dated sends them to the next business.",
+    "discoveryQuestions": [
+      "Do you have a website today, and when did you last open it on your phone?",
+      "Where do most of your new customers come from right now?",
+      "What do people usually ask before they decide to buy or visit?",
+      "How do you handle an enquiry that comes in after closing time?",
+      "Who updates your prices, photos and offers when they change?"
+    ],
+    "deliverables": [
+      "A mobile-first website of 5 to 8 pages written around your services",
+      "A chat assistant that answers common questions and takes down enquiries",
+      "Enquiry alerts on your WhatsApp the moment someone submits a form",
+      "Google Business profile linked and basic search setup",
+      "A short handover so your team can change text and photos"
+    ],
+    "pricingGuidance": ""
+  },
+  {
+    "serviceKey": "whatsapp_bots",
+    "title": "WhatsApp bots and automation",
+    "pitch": "Your customers already live on WhatsApp. We set up an assistant on your business number that replies instantly with prices, timings and location, books appointments and sends reminders, so you stop answering the same ten questions all day and stop losing enquiries that arrive when you are busy.",
+    "discoveryQuestions": [
+      "How many WhatsApp messages do you get on a normal day?",
+      "Which questions do you answer again and again?",
+      "How many enquiries do you think go unanswered when you are busy or closed?",
+      "Do you send reminders for appointments, payments or renewals today?",
+      "Is your WhatsApp number personal or a business account?"
+    ],
+    "deliverables": [
+      "A WhatsApp Business account set up with your profile and catalogue",
+      "An automatic first reply and answers to your common questions",
+      "Appointment or order capture with a confirmation message",
+      "Reminder messages for appointments, payments or renewals",
+      "A simple weekly count of chats, enquiries and bookings"
+    ],
+    "pricingGuidance": ""
+  },
+  {
+    "serviceKey": "website_whatsapp_integration",
+    "title": "Website and WhatsApp integration",
+    "pitch": "If you already have a website, we connect it to WhatsApp so every form fill, call button and booking request reaches you as a WhatsApp message with the customer details, and the customer gets an instant reply. Nothing sits in an inbox nobody checks.",
+    "discoveryQuestions": [
+      "Where do your website enquiries go today, an email or a phone?",
+      "How long does it usually take you to reply to a website enquiry?",
+      "Have you ever found out about an enquiry days after it came in?",
+      "Do customers on your site have a way to message you directly?",
+      "Who looks after your website right now?"
+    ],
+    "deliverables": [
+      "A WhatsApp chat button on every page of your website",
+      "Form submissions delivered to your WhatsApp with name, number and message",
+      "An automatic thank-you reply to the customer",
+      "Tracking so you can see which page each enquiry came from",
+      "A test of the full path from form to WhatsApp before we hand over"
+    ],
+    "pricingGuidance": ""
+  },
+  {
+    "serviceKey": "crm_setup",
+    "title": "CRM setup",
+    "pitch": "We set up a simple customer record system around how you already sell, so every lead, follow-up and payment promise is in one place instead of notebooks and memory. You see who to call today, who went quiet, and what is pending, from your phone.",
+    "discoveryQuestions": [
+      "Where do you keep customer details and follow-ups today?",
+      "How do you remember who to call back and when?",
+      "What happens to a lead when the person who spoke to them is away?",
+      "Do you know how many enquiries turned into sales last month?",
+      "How many people in your team talk to customers?"
+    ],
+    "deliverables": [
+      "A CRM set up with your customer list imported and cleaned",
+      "Stages that match your own sales process",
+      "Follow-up reminders for every lead and customer",
+      "A daily list of who to call and what is overdue",
+      "A one-hour training for you and your team"
+    ],
+    "pricingGuidance": ""
+  },
+  {
+    "serviceKey": "lead_capture_tracking",
+    "title": "Lead capture and tracking",
+    "pitch": "We make sure every enquiry from your ads, website, calls and social pages is captured in one place with its source, so you know which spend brings real customers and no lead is lost between a missed call and a forgotten message.",
+    "discoveryQuestions": [
+      "Where do your enquiries come from today: calls, walk-ins, ads, social media?",
+      "Do you know which of them turns into paying customers?",
+      "What happens to a missed call?",
+      "Are you spending on ads or promotions, and how do you know if they work?",
+      "Who is responsible for following up with new enquiries?"
+    ],
+    "deliverables": [
+      "Forms and click-to-chat buttons on your site and social pages",
+      "Missed-call and enquiry capture into one list",
+      "Source tracking for every lead, so you see what works",
+      "An alert to you or your team for each new lead",
+      "A monthly one-page summary of leads by source"
+    ],
+    "pricingGuidance": ""
+  },
+  {
+    "serviceKey": "seo_digital_marketing",
+    "title": "SEO and digital marketing",
+    "pitch": "When someone near you searches for what you sell, we make sure your business shows up with correct details, good photos and reviews. We also run simple, local campaigns so the enquiries come to you instead of to the competitor down the road.",
+    "discoveryQuestions": [
+      "If I search for your service in your area, do you know where you appear?",
+      "Is your Google Business profile claimed, with correct timings and photos?",
+      "How many Google reviews do you have, and do you ask customers for them?",
+      "Have you tried ads or social media promotion before, and what happened?",
+      "Which service or product would you most like to sell more of?"
+    ],
+    "deliverables": [
+      "Google Business profile set up and optimised",
+      "A local search plan for the 10 phrases your customers use",
+      "A review request message for your customers to send on WhatsApp",
+      "A monthly social media calendar with posts ready to publish",
+      "A monthly report of calls, direction requests and enquiries"
+    ],
+    "pricingGuidance": ""
+  }
+]

@@ -2,15 +2,15 @@
 
 /**
  * The sheet that opens after a call: outcome buttons, call length, mix spoken,
- * optional pain point, objections or lost reason, and the next action pre-filled
- * from the next working slot. Builds one LogCallInput with one clientId, so a
+ * optional pain point, objections, a WhatsApp follow-up template, lost reason,
+ * and the next action pre-filled from the next working slot. Builds one LogCallInput with one clientId, so a
  * double tap stays one call. buildPayload checks it before it is queued. "Didn't
  * call" logs nothing. Used by LeadCallFlow.
  */
 import { useEffect, useRef, useState } from 'react'
 import { Surface } from '@/components/glass/Surface'
 import { BUTTON, FIELD, MUTED } from '@/components/lead/styles'
-import type { CallLead, CallObjection, CallPoint } from '@/lib/call/callScreen'
+import type { CallLead, CallObjection, CallPoint, CallTemplate } from '@/lib/call/callScreen'
 import { buildPayload, usableEstimate } from '@/lib/call/buildPayload'
 import { defaultNextActionType } from '@/lib/call/defaultNextAction'
 import { toLocalInput } from '@/lib/call/localDateTime'
@@ -20,6 +20,7 @@ import type { Mix, Outcome } from '@/lib/domain'
 import type { OutboxOp } from '@/lib/offline/outbox'
 import { MixChips } from './MixChips'
 import { EMPTY_PAIN_DRAFT, PainPointForm, toPainPoint } from './PainPointForm'
+import { TemplatePicker } from './TemplatePicker'
 
 const MODULE = 'OutcomeSheet'
 
@@ -30,6 +31,10 @@ export interface OutcomeSheetProps {
   /** Seconds estimated from time away; null when the sheet was opened by hand. */
   estimatedSeconds: number | null
   objections: CallObjection[]
+  templates: CallTemplate[]
+  /** Objections chosen so far (in the drawer or here); kept by LeadCallFlow. */
+  objectionIds: string[]
+  onToggleObjection: (objectionId: string) => void
   /** Why saving must wait for the voice note, or null. Saving now would lose the note. */
   saveBlock: string | null
   onCancel: () => void
@@ -37,7 +42,8 @@ export interface OutcomeSheetProps {
 }
 
 export function OutcomeSheet(props: OutcomeSheetProps) {
-  const { lead, point, openerId, objections, saveBlock, onCancel, onSubmit } = props
+  const { lead, point, openerId, objections, templates, objectionIds, onToggleObjection } = props
+  const { saveBlock, onCancel, onSubmit } = props
   const estimatedSeconds = usableEstimate(props.estimatedSeconds)
   const [clientId] = useState(() => crypto.randomUUID())
   const [outcome, setOutcome] = useState<Outcome | null>(null)
@@ -45,7 +51,6 @@ export function OutcomeSheet(props: OutcomeSheetProps) {
   const [isEstimate, setIsEstimate] = useState(estimatedSeconds !== null)
   const [mix, setMix] = useState<Mix>(point.mix)
   const [pain, setPain] = useState(EMPTY_PAIN_DRAFT)
-  const [objectionIds, setObjectionIds] = useState<string[]>([])
   const [lostReason, setLostReason] = useState('')
   const [nextType, setNextType] = useState<NextActionType | null>(null)
   const [nextDue, setNextDue] = useState(() => toLocalInput(lead.callbackDefault))
@@ -92,10 +97,6 @@ export function OutcomeSheet(props: OutcomeSheetProps) {
       setError('The outcome could not be saved. Try again.')
       setSaving(false)
     }
-  }
-
-  function toggleObjection(id: string) {
-    setObjectionIds((ids) => (ids.includes(id) ? ids.filter((other) => other !== id) : [...ids, id]))
   }
 
   return (
@@ -146,13 +147,15 @@ export function OutcomeSheet(props: OutcomeSheetProps) {
               <input
                 type="checkbox"
                 checked={objectionIds.includes(objection.id)}
-                onChange={() => toggleObjection(objection.id)}
+                onChange={() => onToggleObjection(objection.id)}
               />
               <span className="min-w-0 break-words">{objection.text}</span>
             </label>
           ))}
         </fieldset>
       )}
+
+      <TemplatePicker templates={templates} point={point} companyName={lead.name} />
 
       {outcome === 'not_interested' && (
         <label className="grid gap-1 text-sm">

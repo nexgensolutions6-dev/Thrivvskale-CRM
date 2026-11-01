@@ -45,7 +45,7 @@ export function CallCockpit({ workspaceId, screen }: CallCockpitProps) {
       <OutboxStatus count={outbox.waiting.length} stuck={outbox.stuck} />
       <RefusedOutcomes letters={outbox.refused} onRemove={(clientId) => void outbox.removeRefused(clientId)} />
       {lead ? (
-        <LeadCallFlow key={lead.companyId} lead={lead} objections={screen.objections} onSubmit={submit} />
+        <LeadCallFlow key={lead.companyId} lead={lead} objections={screen.objections} templates={screen.templates} onSubmit={submit} />
       ) : screen.moreWaiting ? (
         <Surface level="L2" className="flex flex-col items-start gap-3 p-6">
           <h2 className="text-2xl font-semibold">Batch done</h2>

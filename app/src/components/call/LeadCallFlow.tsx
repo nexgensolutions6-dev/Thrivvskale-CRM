@@ -3,11 +3,12 @@
 /**
  * The call flow for one lead: the call card, then the outcome sheet when the
  * user returns from the dialer (not within 5 seconds: that call was not placed).
+ * Holds the objections selected in the drawer so the outcome sheet logs them.
  * Keyed by company, so every choice here resets on the next lead. Used by CallCockpit.
  */
 import { useCallback, useState } from 'react'
 import { Surface } from '@/components/glass/Surface'
-import type { CallLead, CallObjection } from '@/lib/call/callScreen'
+import type { CallLead, CallObjection, CallTemplate } from '@/lib/call/callScreen'
 import { useCallReturn } from '@/lib/call/useCallReturn'
 import { voiceNoteSaveBlock, type VoiceNoteStage } from '@/lib/call/voiceNoteGuard'
 import type { OutboxOp } from '@/lib/offline/outbox'
@@ -20,18 +21,24 @@ type Sheet = { estimatedSeconds: number | null }
 export interface LeadCallFlowProps {
   lead: CallLead
   objections: CallObjection[]
+  templates: CallTemplate[]
   onSubmit: (op: OutboxOp) => Promise<void>
 }
 
-export function LeadCallFlow({ lead, objections, onSubmit }: LeadCallFlowProps) {
+export function LeadCallFlow({ lead, objections, templates, onSubmit }: LeadCallFlowProps) {
   const [pointId, setPointId] = useState(lead.points[0].id)
   const [openerId, setOpenerId] = useState<string | null>(lead.openers[0]?.id ?? null)
+  const [objectionIds, setObjectionIds] = useState<string[]>([])
   const [sheet, setSheet] = useState<Sheet | null>(null)
   const [voiceStage, setVoiceStage] = useState<VoiceNoteStage>('idle')
   const point = lead.points.find((option) => option.id === pointId) ?? lead.points[0]
 
   const openWithEstimate = useCallback((seconds: number) => setSheet({ estimatedSeconds: seconds }), [])
   const { markLeft, forget } = useCallReturn(openWithEstimate)
+
+  function toggleObjection(id: string) {
+    setObjectionIds((ids) => (ids.includes(id) ? ids.filter((other) => other !== id) : [...ids, id]))
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -42,6 +49,9 @@ export function LeadCallFlow({ lead, objections, onSubmit }: LeadCallFlowProps) 
           openerId={openerId}
           estimatedSeconds={sheet.estimatedSeconds}
           objections={objections}
+          templates={templates}
+          objectionIds={objectionIds}
+          onToggleObjection={toggleObjection}
           saveBlock={voiceNoteSaveBlock(voiceStage)}
           onCancel={() => setSheet(null)}
           onSubmit={onSubmit}
@@ -50,6 +60,9 @@ export function LeadCallFlow({ lead, objections, onSubmit }: LeadCallFlowProps) 
         <CallCard
           lead={lead}
           point={point}
+          objections={objections}
+          objectionIds={objectionIds}
+          onToggleObjection={toggleObjection}
           onChoosePoint={setPointId}
           onChooseOpener={setOpenerId}
           onCallPressed={markLeft}

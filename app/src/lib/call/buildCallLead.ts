@@ -35,7 +35,14 @@ function ownersFirst(view: LeadView, points: ReturnType<typeof buildOpenerChoice
   const withMix = points.map((point, index) => {
     const ownerId = view.points[index].contactId
     const owner = view.contacts.find((contact) => contact.id === ownerId)
-    return { point: { ...point, mix: (owner && contactMix(owner)) ?? lead }, isPrimary: ownerId === primary?.id }
+    const mix = (owner && contactMix(owner)) ?? lead
+    const greetingName = greetingNameOf(owner ?? primary)
+    return { point: { ...point, mix, greetingName }, isPrimary: ownerId === primary?.id }
   })
   return [...withMix.filter((row) => row.isPrimary), ...withMix.filter((row) => !row.isPrimary)].map((row) => row.point)
+}
+
+/** The name a message starts with: the Latin-script name when there is one. */
+function greetingNameOf(contact: { nameLatin: string | null; name: string | null } | null | undefined): string | undefined {
+  return contact ? (contact.nameLatin ?? contact.name ?? undefined) : undefined
 }

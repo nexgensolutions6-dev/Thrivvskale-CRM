@@ -4,11 +4,14 @@
  * the cockpit keeps advancing through leads while offline. Types only.
  */
 import type { Mix } from '@/lib/domain'
+import type { ContentVariant } from '@/lib/language/types'
 import type { PickerOpener, PickerPoint } from '@/lib/leads/openerChoices'
 
 export interface CallPoint extends PickerPoint {
   /** The mix chips pre-filled for this number: its owner's mix, else the lead's. */
   mix: Mix
+  /** The name a message to this number starts with: its owner's, else the primary contact's. */
+  greetingName: string | undefined
 }
 
 export interface CallLead {
@@ -25,9 +28,27 @@ export interface CallLead {
   callbackDefault: string
 }
 
+/** One stored answer to an objection: the English original or a rewrite in another mix. */
+export interface ObjectionResponse {
+  variant: ContentVariant
+  /** An AI rewrite the user has not approved yet. */
+  isDraft: boolean
+}
+
 export interface CallObjection {
   id: string
   text: string
+  /** The English response a rewrite starts from; null if the objection has none. */
+  englishId: string | null
+  responses: ObjectionResponse[]
+}
+
+/** One WhatsApp follow-up template: the English text and any rewrites of it. */
+export interface CallTemplate {
+  /** The English variant's id. */
+  id: string
+  title: string
+  variants: ContentVariant[]
 }
 
 export interface CallScreen {
@@ -38,4 +59,5 @@ export interface CallScreen {
   /** Leads whose callback is not due yet: not called now, not lost either. */
   scheduledLater: number
   objections: CallObjection[]
+  templates: CallTemplate[]
 }

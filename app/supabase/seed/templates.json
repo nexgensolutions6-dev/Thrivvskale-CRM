@@ -1,0 +1,22 @@
+[
+  {
+    "key": "thanks_after_call",
+    "title": "Thanks after the call",
+    "body": "Hello {name} {honorific}, thank you for speaking with me today. I am Yaswanth from ThrivvSkale. As discussed, I will look into what would help {company} most and get back to you. Please message me here if you want to ask anything in the meantime."
+  },
+  {
+    "key": "brochure_details",
+    "title": "Brochure and details",
+    "body": "Hello {name} {honorific}, as promised, here are the details of how ThrivvSkale can help {company}: a website that brings in enquiries, WhatsApp replies that work all day, and one place to track every lead. Tell me which of these matters most to you, and I will send a short example for it."
+  },
+  {
+    "key": "demo_reminder",
+    "title": "Demo reminder",
+    "body": "Hello {name} {honorific}, a gentle reminder about our demo for {company}. It takes about 20 minutes, and I will show how it works with your own business as the example. If the time does not suit you, reply here with a time that does and I will adjust."
+  },
+  {
+    "key": "website_not_loading",
+    "title": "Your website is not loading",
+    "body": "Hello {name} {honorific}, I tried to open the website of {company} just now and it did not load for me. Customers who cannot open a site usually leave and do not come back. I can look into the cause today, free of charge, and tell you what needs fixing. Shall I?"
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "key": "send_details_whatsapp",
+    "text": "Send details on WhatsApp",
+    "response": "Happy to, I will send it right after this call. So that I send what is useful and not a long brochure, may I ask one thing: what is the biggest problem you want fixed first, getting more enquiries or handling the ones you already get? Then I will send two lines on exactly that, with an example, and call you tomorrow to hear what you think."
+  },
+  {
+    "key": "already_have_someone",
+    "text": "We already have someone",
+    "response": "That is good to hear, and I am not asking you to change anyone. Many of our clients kept their existing person and added us for one specific piece, such as the WhatsApp replies or lead tracking. Could I ask what your current person handles for you? If everything is covered, I will not take more of your time."
+  },
+  {
+    "key": "too_expensive",
+    "text": "Too expensive",
+    "response": "I understand, and I do not want you paying for something that does not return more than it costs. Let us start small: one fix for one problem, so you can see the result before deciding anything more. Roughly how many enquiries do you think you lose in a month? That helps me show whether it is worth it for you at all."
+  },
+  {
+    "key": "not_now",
+    "text": "Not now",
+    "response": "Understood, timing matters. Is it the busy season, or is something else taking your attention? If I send you one short note now, with nothing to decide, you can look at it when it suits you. May I check back in a few weeks?"
+  },
+  {
+    "key": "call_back_later",
+    "text": "Call back later",
+    "response": "Of course. So that I do not disturb you again at a bad time, what day and time suits you best, and which number should I call? I will keep it to five minutes, and I will send you a short message first so you know what it is about."
+  }
+]

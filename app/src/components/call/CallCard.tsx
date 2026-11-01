@@ -2,7 +2,7 @@
 
 /**
  * The call card: one lead at a time with the big Call button for the chosen
- * number, the problem and offer, and the opener picker. On wide screens it offers
+ * number, the problem and offer, the opener picker and the objection drawer. On wide screens it offers
  * a QR code so a phone can place the call. Used by LeadCallFlow.
  */
 import Link from 'next/link'
@@ -10,13 +10,17 @@ import { useState } from 'react'
 import { Surface } from '@/components/glass/Surface'
 import { OpenerPicker } from '@/components/lead/OpenerPicker'
 import { BUTTON, FIELD, MUTED } from '@/components/lead/styles'
-import type { CallLead, CallPoint } from '@/lib/call/callScreen'
+import type { CallLead, CallObjection, CallPoint } from '@/lib/call/callScreen'
 import { telHref } from '@/lib/call/telLink'
+import { ObjectionDrawer } from './ObjectionDrawer'
 import { TelQr } from './TelQr'
 
 export interface CallCardProps {
   lead: CallLead
   point: CallPoint
+  objections: CallObjection[]
+  objectionIds: string[]
+  onToggleObjection: (objectionId: string) => void
   onChoosePoint: (pointId: string) => void
   onChooseOpener: (openerId: string) => void
   /** The Call button was pressed: the dialer is about to open. */
@@ -25,7 +29,9 @@ export interface CallCardProps {
   onLogOutcome: () => void
 }
 
-export function CallCard({ lead, point, onChoosePoint, onChooseOpener, onCallPressed, onLogOutcome }: CallCardProps) {
+export function CallCard(props: CallCardProps) {
+  const { lead, point, objections, objectionIds, onToggleObjection } = props
+  const { onChoosePoint, onChooseOpener, onCallPressed, onLogOutcome } = props
   const [showQr, setShowQr] = useState(false)
   const href = telHref(point.e164)
   const place = [lead.vertical, lead.area].filter(Boolean).join(' · ')
@@ -79,6 +85,7 @@ export function CallCard({ lead, point, onChoosePoint, onChooseOpener, onCallPre
         </section>
       )}
       <OpenerPicker openers={lead.openers} points={lead.points} mixLabel={lead.mixLabel} onSelect={onChooseOpener} />
+      <ObjectionDrawer objections={objections} mix={point.mix} selectedIds={objectionIds} onToggle={onToggleObjection} />
     </Surface>
   )
 }

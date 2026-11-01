@@ -5,6 +5,7 @@
  * (as a safety net if the callback could not finish).
  */
 import 'server-only'
+import { seedWorkspaceContent } from '@/lib/content/seedWorkspaceContent'
 import type { Mix } from '@/lib/domain'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin-client'
 import { stepError } from '@/lib/step-error'
@@ -64,5 +65,20 @@ export async function ensureWorkspace(userId: string): Promise<{ workspaceId: st
     )
   if (member.error) throw stepError(MODULE, 'insert member', member.error)
 
+  // Only the call that created the workspace seeds it; healing or racing calls skip this.
+  if (!lostTheRace) await seedStarterContent(workspaceId)
+
   return { workspaceId }
+}
+
+/**
+ * A failed seed must not stop the user signing in: they get an empty library
+ * and the error is logged with the workspace id. Seeding is safe to rerun.
+ */
+async function seedStarterContent(workspaceId: string): Promise<void> {
+  try {
+    await seedWorkspaceContent(workspaceId)
+  } catch (error) {
+    console.error(`[${MODULE}] seed starter content for workspace ${workspaceId} failed`, error)
+  }
 }

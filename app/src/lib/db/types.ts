@@ -205,14 +205,14 @@ isOneToOne: false
                   ]
                 },"content_variants": {
                   Row: {
-                    "body": string,"company_id": string | null,"created_at": string,"id": string,"kind": Database["public"]['Enums']["content_kind"],"mix": string,"outcome_counts": NonNullable<Json>,"parent_variant_id": string | null,"register": Database["public"]['Enums']["register"] | null,"script": Database["public"]['Enums']["script"],"source": Database["public"]['Enums']["content_source"],"stage": string | null,"updated_at": string,"usage_count": number,"vertical": string | null,"workspace_id": string
+                    "body": string,"company_id": string | null,"created_at": string,"id": string,"kind": Database["public"]['Enums']["content_kind"],"mix": string,"outcome_counts": NonNullable<Json>,"parent_variant_id": string | null,"register": Database["public"]['Enums']["register"] | null,"script": Database["public"]['Enums']["script"],"seed_key": string | null,"source": Database["public"]['Enums']["content_source"],"stage": string | null,"title": string | null,"updated_at": string,"usage_count": number,"vertical": string | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "body": string,"company_id"?: string | null,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["content_kind"],"mix"?: string,"outcome_counts"?: NonNullable<Json>,"parent_variant_id"?: string | null,"register"?: Database["public"]['Enums']["register"] | null,"script"?: Database["public"]['Enums']["script"],"source"?: Database["public"]['Enums']["content_source"],"stage"?: string | null,"updated_at"?: string,"usage_count"?: number,"vertical"?: string | null,"workspace_id": string
+                    "body": string,"company_id"?: string | null,"created_at"?: string,"id"?: string,"kind": Database["public"]['Enums']["content_kind"],"mix"?: string,"outcome_counts"?: NonNullable<Json>,"parent_variant_id"?: string | null,"register"?: Database["public"]['Enums']["register"] | null,"script"?: Database["public"]['Enums']["script"],"seed_key"?: string | null,"source"?: Database["public"]['Enums']["content_source"],"stage"?: string | null,"title"?: string | null,"updated_at"?: string,"usage_count"?: number,"vertical"?: string | null,"workspace_id": string
                   }
                   Update: {
-                    "body"?: string,"company_id"?: string | null,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["content_kind"],"mix"?: string,"outcome_counts"?: NonNullable<Json>,"parent_variant_id"?: string | null,"register"?: Database["public"]['Enums']["register"] | null,"script"?: Database["public"]['Enums']["script"],"source"?: Database["public"]['Enums']["content_source"],"stage"?: string | null,"updated_at"?: string,"usage_count"?: number,"vertical"?: string | null,"workspace_id"?: string
+                    "body"?: string,"company_id"?: string | null,"created_at"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["content_kind"],"mix"?: string,"outcome_counts"?: NonNullable<Json>,"parent_variant_id"?: string | null,"register"?: Database["public"]['Enums']["register"] | null,"script"?: Database["public"]['Enums']["script"],"seed_key"?: string | null,"source"?: Database["public"]['Enums']["content_source"],"stage"?: string | null,"title"?: string | null,"updated_at"?: string,"usage_count"?: number,"vertical"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -329,14 +329,14 @@ isOneToOne: false
                   ]
                 },"objections": {
                   Row: {
-                    "created_at": string,"id": string,"mix": string | null,"suggested_response_id": string | null,"text": string,"updated_at": string,"vertical": string | null,"workspace_id": string
+                    "created_at": string,"id": string,"mix": string | null,"seed_key": string | null,"suggested_response_id": string | null,"text": string,"updated_at": string,"vertical": string | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"mix"?: string | null,"suggested_response_id"?: string | null,"text": string,"updated_at"?: string,"vertical"?: string | null,"workspace_id": string
+                    "created_at"?: string,"id"?: string,"mix"?: string | null,"seed_key"?: string | null,"suggested_response_id"?: string | null,"text": string,"updated_at"?: string,"vertical"?: string | null,"workspace_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"mix"?: string | null,"suggested_response_id"?: string | null,"text"?: string,"updated_at"?: string,"vertical"?: string | null,"workspace_id"?: string
+                    "created_at"?: string,"id"?: string,"mix"?: string | null,"seed_key"?: string | null,"suggested_response_id"?: string | null,"text"?: string,"updated_at"?: string,"vertical"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -379,6 +379,26 @@ isOneToOne: false
       referencedColumns: ["workspace_id","id"]
     },{
       foreignKeyName: "pain_points_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"playbooks": {
+                  Row: {
+                    "created_at": string,"deliverables": NonNullable<Json>,"discovery_questions": NonNullable<Json>,"id": string,"pitch": string,"pricing_guidance": string,"service_key": string,"title": string,"updated_at": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"deliverables"?: NonNullable<Json>,"discovery_questions"?: NonNullable<Json>,"id"?: string,"pitch": string,"pricing_guidance"?: string,"service_key": string,"title": string,"updated_at"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"deliverables"?: NonNullable<Json>,"discovery_questions"?: NonNullable<Json>,"id"?: string,"pitch"?: string,"pricing_guidance"?: string,"service_key"?: string,"title"?: string,"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "playbooks_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"

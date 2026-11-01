@@ -1,5 +1,5 @@
 /**
- * /more - the list of less-used screens: Settings and Import. Rendered inside
+ * /more - the list of less-used screens: Settings, Targets, Playbooks and Import. Rendered inside
  * the (app) shell; the dock and tab bar keep "More" lit on these pages too.
  */
 import type { Metadata } from 'next'
@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: 'More | ThrivvSkale CRM' }
 const LINKS = [
   { href: '/more/settings', label: 'Settings', hint: 'Glass effects and other preferences' },
   { href: '/more/targets', label: 'Daily targets', hint: 'Calls, conversations and demos per day' },
+  { href: '/more/playbooks', label: 'Playbooks', hint: 'Pitch, questions and deliverables for each service' },
   { href: '/more/import', label: 'Import leads', hint: 'Add leads from a CSV file' },
 ]
 

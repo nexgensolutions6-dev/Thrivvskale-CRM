@@ -5,7 +5,7 @@ import type { Mix, Register, Script } from '@/lib/domain'
 
 export type ContentVariant = {
   id: string
-  kind: 'opener' | 'template' | 'script' | 'objection'
+  kind: 'opener' | 'template' | 'script' | 'objection_response'
   mix: Mix
   script: Script
   register: Register
