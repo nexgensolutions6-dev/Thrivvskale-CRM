@@ -479,14 +479,14 @@ isOneToOne: false
                   ]
                 },"workspaces": {
                   Row: {
-                    "created_at": string,"default_language_mix": (Database["public"]['Enums']["lang_code"])[],"gst_registered": boolean,"gstin": string | null,"home_state": string | null,"id": string,"name": string,"timezone": string,"updated_at": string,"working_days": (number)[]
+                    "content_seeded_at": string | null,"created_at": string,"default_language_mix": (Database["public"]['Enums']["lang_code"])[],"gst_registered": boolean,"gstin": string | null,"home_state": string | null,"id": string,"name": string,"timezone": string,"updated_at": string,"working_days": (number)[]
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"default_language_mix"?: (Database["public"]['Enums']["lang_code"])[],"gst_registered"?: boolean,"gstin"?: string | null,"home_state"?: string | null,"id"?: string,"name": string,"timezone"?: string,"updated_at"?: string,"working_days"?: (number)[]
+                    "content_seeded_at"?: string | null,"created_at"?: string,"default_language_mix"?: (Database["public"]['Enums']["lang_code"])[],"gst_registered"?: boolean,"gstin"?: string | null,"home_state"?: string | null,"id"?: string,"name": string,"timezone"?: string,"updated_at"?: string,"working_days"?: (number)[]
                   }
                   Update: {
-                    "created_at"?: string,"default_language_mix"?: (Database["public"]['Enums']["lang_code"])[],"gst_registered"?: boolean,"gstin"?: string | null,"home_state"?: string | null,"id"?: string,"name"?: string,"timezone"?: string,"updated_at"?: string,"working_days"?: (number)[]
+                    "content_seeded_at"?: string | null,"created_at"?: string,"default_language_mix"?: (Database["public"]['Enums']["lang_code"])[],"gst_registered"?: boolean,"gstin"?: string | null,"home_state"?: string | null,"id"?: string,"name"?: string,"timezone"?: string,"updated_at"?: string,"working_days"?: (number)[]
                   }
                   Relationships: [
                     

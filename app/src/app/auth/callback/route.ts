@@ -5,7 +5,7 @@
  * Next calls `GET` here; nothing else imports this file.
  */
 import { NextResponse, type NextRequest } from 'next/server'
-import { seedIfEmpty } from '@/lib/content/seedIfEmpty'
+import { seedIfNotSeeded } from '@/lib/content/seedIfNotSeeded'
 import { safeNextPath } from '@/lib/auth/next-param'
 import { DEFAULT_HOME_PATH, LOGIN_PATH } from '@/lib/auth/path-rules'
 import { createSupabaseServerClient } from '@/lib/supabase/server-client'
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   // A seed that failed at sign-up is retried here; it must never block sign-in.
   if (workspaceId) {
     try {
-      await seedIfEmpty(workspaceId)
+      await seedIfNotSeeded(workspaceId)
     } catch (cause) {
       console.error(`[auth/callback] seed starter content failed, continuing: ${errorText(cause)}`)
     }

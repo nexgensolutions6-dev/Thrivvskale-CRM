@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { loadCallScreen } from '@/lib/call/loadCallScreen'
 import { loadPlaybooks } from '@/lib/content/loadPlaybooks'
-import { seedIfEmpty } from '@/lib/content/seedIfEmpty'
+import { seedIfNotSeeded } from '@/lib/content/seedIfNotSeeded'
 import { seedWorkspaceContent } from '@/lib/content/seedWorkspaceContent'
 import { ensureWorkspace } from '@/lib/workspace/ensure-workspace'
 import { workspaceIdForUser } from '@/lib/workspace/workspace-id'
@@ -31,6 +31,12 @@ async function newAuthUser(label: string): Promise<string> {
   if (created.error) throw created.error
   authUserIds.push(created.data.user.id)
   return created.data.user.id
+}
+
+async function marker(workspaceId: string): Promise<string | null> {
+  const row = await admin.from('workspaces').select('content_seeded_at').eq('id', workspaceId).single()
+  if (row.error) throw row.error
+  return row.data.content_seeded_at
 }
 
 async function count(table: 'playbooks' | 'objections' | 'content_variants', workspaceId: string, kind?: string) {
@@ -133,17 +139,17 @@ describe('starter content', () => {
     expect(await count('objections', existing.workspaceId)).toBe(0)
   })
 
-  it('seedIfEmpty retries an unseeded workspace once and leaves a seeded one alone', async () => {
+  it('seedIfNotSeeded retries an unseeded workspace once and leaves a seeded one alone', async () => {
     const existing = await createUserWithWorkspace(stack, 'pb-retry')
     members.push(existing)
     expect(await count('playbooks', existing.workspaceId)).toBe(0)
 
-    await seedIfEmpty(existing.workspaceId)
+    await seedIfNotSeeded(existing.workspaceId)
     expect(await count('playbooks', existing.workspaceId)).toBe(6)
     expect(await count('objections', existing.workspaceId)).toBe(5)
 
     await admin.from('playbooks').update({ pitch: 'My own pitch' }).eq('workspace_id', existing.workspaceId).eq('service_key', 'crm_setup')
-    await seedIfEmpty(existing.workspaceId)
+    await seedIfNotSeeded(existing.workspaceId)
     const kept = await admin.from('playbooks').select('pitch').eq('workspace_id', existing.workspaceId).eq('service_key', 'crm_setup').single()
     expect(kept.data?.pitch).toBe('My own pitch')
   })
@@ -157,6 +163,39 @@ describe('starter content', () => {
     await ensureWorkspace(userId)
 
     expect(await count('playbooks', workspaceId)).toBe(0)
+    expect(await marker(workspaceId)).not.toBeNull()
+    await seedIfNotSeeded(workspaceId)
+    expect(await count('playbooks', workspaceId)).toBe(0)
+  })
+
+  it('first sign-up seeds once and sets the marker', async () => {
+    const userId = await newAuthUser('first')
+    const { workspaceId } = await ensureWorkspace(userId)
+    expect(await count('playbooks', workspaceId)).toBe(6)
+    expect(await marker(workspaceId)).not.toBeNull()
+    await seedIfNotSeeded(workspaceId)
+    expect(await count('playbooks', workspaceId)).toBe(6)
+  })
+
+  it('a user who deleted all playbooks is not re-seeded by the retry', async () => {
+    const { workspaceId } = await ensureWorkspace(await newAuthUser('deleted'))
+    await admin.from('playbooks').delete().eq('workspace_id', workspaceId)
+    await seedIfNotSeeded(workspaceId)
+    expect(await count('playbooks', workspaceId)).toBe(0)
+  })
+
+  it('a partial seed (marker null, templates missing) is completed and marked', async () => {
+    const member = await createUserWithWorkspace(stack, 'pb-partial')
+    members.push(member)
+    await seedWorkspaceContent(member.workspaceId)
+    await admin.from('content_variants').delete().eq('workspace_id', member.workspaceId).eq('kind' as never, 'template')
+    await admin.from('workspaces').update({ content_seeded_at: null }).eq('id', member.workspaceId)
+
+    await seedIfNotSeeded(member.workspaceId)
+
+    expect(await count('playbooks', member.workspaceId)).toBe(6)
+    expect(await count('content_variants', member.workspaceId)).toBe(9)
+    expect(await marker(member.workspaceId)).not.toBeNull()
   })
 
   it('the signed-in member reads playbooks, and the call screen carries objections and templates', async () => {

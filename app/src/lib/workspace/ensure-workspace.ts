@@ -65,8 +65,10 @@ export async function ensureWorkspace(userId: string): Promise<{ workspaceId: st
     )
   if (member.error) throw stepError(MODULE, 'insert member', member.error)
 
-  // Only the call that created the workspace seeds it; healing or racing calls skip this.
+  // Only the call that created the workspace seeds it. A healed workspace is
+  // deliberately left unseeded: mark it so the sign-in retry skips it.
   if (!lostTheRace) await seedStarterContent(workspaceId)
+  else await markUnseeded(workspaceId)
 
   return { workspaceId }
 }
@@ -81,4 +83,15 @@ async function seedStarterContent(workspaceId: string): Promise<void> {
   } catch (error) {
     console.error(`[${MODULE}] seed starter content for workspace ${workspaceId} failed`, error)
   }
+}
+
+/** Marks a healed workspace as done without seeding it (sets `content_seeded_at`). */
+async function markUnseeded(workspaceId: string): Promise<void> {
+  const db = createSupabaseAdminClient()
+  const marked = await db
+    .from('workspaces')
+    .update({ content_seeded_at: new Date().toISOString() })
+    .eq('id', workspaceId)
+    .is('content_seeded_at', null)
+  if (marked.error) throw stepError(MODULE, `mark healed workspace ${workspaceId} as not seeded`, marked.error)
 }

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Database } from '@/lib/db/types'
 import { approveDraftVariant } from '@/lib/language/approveDraftVariant'
 import { createDraft } from '@/lib/language/createDraft'
@@ -70,6 +70,10 @@ function englishRow(): Row {
 }
 
 describe('rewriteVariant', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('sends the English text, target mix/script and examples, and nothing else', async () => {
     const { client, create } = mockClient()
     const examples = [{ from: 'Good morning', to: 'శుభోదయం' }]
@@ -89,7 +93,6 @@ describe('rewriteVariant', () => {
     vi.stubEnv('ANTHROPIC_MODEL', 'claude-test-model')
     await rewriteVariant({ ...INPUT, mix: [...INPUT.mix], examples: [] }, client)
     expect(create.mock.calls[1][0].model).toBe('claude-test-model')
-    vi.unstubAllEnvs()
   })
 
   it('names the module and step when the reply is empty', async () => {
@@ -110,7 +113,6 @@ describe('rewriteVariant', () => {
     vi.stubEnv('ANTHROPIC_API_KEY', '')
     vi.stubEnv('ANTHROPIC_AUTH_TOKEN', '')
     await expect(rewriteVariant({ ...INPUT, mix: [...INPUT.mix], examples: [] })).rejects.toThrow(/\[rewrite\.server\] call model/)
-    vi.unstubAllEnvs()
   })
 
   it('imports server-only', () => {
