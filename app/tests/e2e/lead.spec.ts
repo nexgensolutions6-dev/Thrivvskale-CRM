@@ -189,7 +189,7 @@ test.describe('Lead list and workspace', () => {
     await page.getByLabel('Phone number').fill('98661 39902')
     await page.getByRole('button', { name: 'Add person' }).click()
     await expect(page.getByText('Saved')).toBeVisible()
-    await expect(page.getByText('+919866139902')).toBeVisible()
+    await expect(page.getByRole('link', { name: '+919866139902' })).toBeVisible() // the number's link; its privacy label also contains the number
 
     await page.goto('/leads?q=ramsh')
     await expect(page.getByRole('link', { name: /Default Offer Co/ })).toBeVisible()

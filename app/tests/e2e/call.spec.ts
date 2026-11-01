@@ -12,6 +12,7 @@ import sharp from 'sharp'
 import { BEST_WINDOWS } from '../../src/lib/calendar/windows'
 import { kolkataInstant, kolkataYmd, addDays, isoWeekday } from '../../src/lib/calendar/kolkataDate'
 import { adminClient, localStack } from '../db/support'
+import { pressCallThenReturn, stubTelLinks, workspaceIdOf } from './call-helpers'
 import { deleteUserByEmail, signIn } from './sign-in'
 
 const AWAY_MS = 20_000
@@ -20,15 +21,6 @@ const emails: string[] = []
 
 function admin() {
   return adminClient(localStack())
-}
-
-async function workspaceIdOf(email: string): Promise<string> {
-  const users = await admin().auth.admin.listUsers({ perPage: 1000 })
-  const user = users.data?.users.find((candidate) => candidate.email === email)
-  if (!user) throw new Error(`[call.spec] no user ${email}`)
-  const member = await admin().from('members').select('workspace_id').eq('user_id', user.id).single()
-  if (member.error) throw new Error(`[call.spec] find workspace failed: ${member.error.message}`)
-  return member.data.workspace_id
 }
 
 async function addLead(workspaceId: string, name: string, priority: 'A' | 'B', phone: string): Promise<string> {
@@ -87,22 +79,6 @@ async function storedCounts(page: Page, workspaceId: string): Promise<{ ops: num
     db.close()
     return counts
   }, `thrivvskale-outbox-${workspaceId}`)
-}
-
-/** Stops the tel: link from leaving the page, so the click only starts the "away" timer. */
-async function stubTelLinks(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement
-      if (target.closest('a[href^="tel:"]')) event.preventDefault()
-    })
-  })
-}
-
-async function pressCallThenReturn(page: Page, awayMs: number): Promise<void> {
-  await page.getByRole('link', { name: /^Call / }).click()
-  await page.clock.fastForward(awayMs)
-  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
 }
 
 async function openCockpit(page: Page): Promise<void> {
