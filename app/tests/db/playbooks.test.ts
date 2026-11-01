@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { loadCallScreen } from '@/lib/call/loadCallScreen'
 import { loadPlaybooks } from '@/lib/content/loadPlaybooks'
+import { seedIfEmpty } from '@/lib/content/seedIfEmpty'
 import { seedWorkspaceContent } from '@/lib/content/seedWorkspaceContent'
 import { ensureWorkspace } from '@/lib/workspace/ensure-workspace'
 import { workspaceIdForUser } from '@/lib/workspace/workspace-id'
@@ -130,6 +131,21 @@ describe('starter content', () => {
 
     expect(await count('playbooks', existing.workspaceId)).toBe(0)
     expect(await count('objections', existing.workspaceId)).toBe(0)
+  })
+
+  it('seedIfEmpty retries an unseeded workspace once and leaves a seeded one alone', async () => {
+    const existing = await createUserWithWorkspace(stack, 'pb-retry')
+    members.push(existing)
+    expect(await count('playbooks', existing.workspaceId)).toBe(0)
+
+    await seedIfEmpty(existing.workspaceId)
+    expect(await count('playbooks', existing.workspaceId)).toBe(6)
+    expect(await count('objections', existing.workspaceId)).toBe(5)
+
+    await admin.from('playbooks').update({ pitch: 'My own pitch' }).eq('workspace_id', existing.workspaceId).eq('service_key', 'crm_setup')
+    await seedIfEmpty(existing.workspaceId)
+    const kept = await admin.from('playbooks').select('pitch').eq('workspace_id', existing.workspaceId).eq('service_key', 'crm_setup').single()
+    expect(kept.data?.pitch).toBe('My own pitch')
   })
 
   it('a healed workspace (created earlier without its owner) is not seeded', async () => {

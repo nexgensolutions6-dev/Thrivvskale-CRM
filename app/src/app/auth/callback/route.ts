@@ -1,10 +1,11 @@
 /**
  * Where the magic-link email brings the visitor back to (`/auth/callback`).
  * Swaps the one-time `code` in the link for a session cookie, makes sure the
- * user has a workspace, then redirects to the `next` page (default `/today`).
+ * user has a workspace (and its starter content), then redirects to the `next` page (default `/today`).
  * Next calls `GET` here; nothing else imports this file.
  */
 import { NextResponse, type NextRequest } from 'next/server'
+import { seedIfEmpty } from '@/lib/content/seedIfEmpty'
 import { safeNextPath } from '@/lib/auth/next-param'
 import { DEFAULT_HOME_PATH, LOGIN_PATH } from '@/lib/auth/path-rules'
 import { createSupabaseServerClient } from '@/lib/supabase/server-client'
@@ -26,12 +27,22 @@ export async function GET(request: NextRequest) {
     return backToLogin('link_invalid', next)
   }
 
+  let workspaceId: string | null = null
   try {
-    await ensureWorkspace(data.user.id)
+    workspaceId = (await ensureWorkspace(data.user.id)).workspaceId
   } catch (cause) {
     // The visitor is signed in. getSessionWorkspace() creates the workspace on
     // the next page, so do not strand them here.
     console.error(`[auth/callback] bootstrap workspace failed, continuing: ${errorText(cause)}`)
+  }
+
+  // A seed that failed at sign-up is retried here; it must never block sign-in.
+  if (workspaceId) {
+    try {
+      await seedIfEmpty(workspaceId)
+    } catch (cause) {
+      console.error(`[auth/callback] seed starter content failed, continuing: ${errorText(cause)}`)
+    }
   }
 
   return redirectTo(next)
