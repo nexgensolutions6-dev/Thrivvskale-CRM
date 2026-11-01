@@ -324,3 +324,52 @@ $$;
 
 revoke execute on function public.contact_import_cells(uuid, uuid) from public, anon;
 grant execute on function public.contact_import_cells(uuid, uuid) to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- consent_log is append-only. 0001 gave it the blanket "for all" member policy;
+-- replace it with select + insert, and an update policy that only exists so
+-- erase_contact (SECURITY INVOKER, step 5) can link rows to the erased contact.
+-- The trigger below limits what an update may change. There is no delete
+-- policy: foreign-key set-null actions bypass RLS and keep working, and the
+-- workspace cascade deletes the log with the workspace.
+-- ---------------------------------------------------------------------------
+
+drop policy "members manage workspace rows" on public.consent_log;
+
+create policy "members read consent log" on public.consent_log
+  for select to authenticated
+  using (public.is_member(workspace_id));
+
+create policy "members append consent log" on public.consent_log
+  for insert to authenticated
+  with check (public.is_member(workspace_id));
+
+create policy "members link consent log" on public.consent_log
+  for update to authenticated
+  using (public.is_member(workspace_id))
+  with check (public.is_member(workspace_id));
+
+-- Only contact_id, company_id and updated_at may change. contact_point_id may
+-- only be cleared (the foreign key's set-null action when a number is erased).
+create function public.guard_consent_log_update()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.id is distinct from old.id
+     or new.workspace_id is distinct from old.workspace_id
+     or new.event is distinct from old.event
+     or new.at is distinct from old.at
+     or new.note is distinct from old.note
+     or new.created_at is distinct from old.created_at
+     or (new.contact_point_id is not null and new.contact_point_id is distinct from old.contact_point_id)
+  then
+    raise exception '[consent_log] update failed: rows are append-only';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger guard_update before update on public.consent_log
+  for each row execute function public.guard_consent_log_update();

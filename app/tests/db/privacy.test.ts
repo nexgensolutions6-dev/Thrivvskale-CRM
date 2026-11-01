@@ -141,6 +141,38 @@ describe('setCompanyDnd', () => {
   })
 })
 
+describe('consent_log is append-only', () => {
+  it('lets a member read and append, but not delete or edit the event', async () => {
+    const user = await newUser('privacy-append-only')
+    const { companyId } = await seedLead(user)
+    await setCompanyDnd(user.client, user.workspaceId, companyId, true, 'Asked not to be called')
+
+    const deleted = await user.client.from('consent_log').delete().eq('company_id', companyId).select('id')
+    expect(deleted.error).toBeNull()
+    expect(deleted.data).toEqual([])
+    expect(await consentEvents(user, companyId)).toHaveLength(1)
+
+    const edited = await user.client.from('consent_log').update({ event: 'consented' }).eq('company_id', companyId)
+    expect(edited.error?.message).toContain('[consent_log] update failed: rows are append-only')
+    const noted = await user.client.from('consent_log').update({ note: 'rewritten' }).eq('company_id', companyId)
+    expect(noted.error?.message).toContain('rows are append-only')
+    expect((await consentEvents(user, companyId))[0]).toMatchObject({ event: 'opted_out', note: 'Asked not to be called' })
+  })
+
+  it('still lets erase_contact link the log and clear a deleted number', async () => {
+    const user = await newUser('privacy-append-erase')
+    const lead = await seedLead(user)
+    const logged = await user.client.from('consent_log').insert({
+      workspace_id: user.workspaceId, contact_point_id: lead.mobileId, event: 'opted_out', note: 'per number',
+    })
+    expect(logged.error).toBeNull()
+    await eraseContactData(user.client, user.workspaceId, lead.contactId)
+    const events = await consentEvents(user, lead.companyId)
+    expect(events.map((row) => row.event)).toEqual(['opted_out', 'erased'])
+    expect(events[0]).toMatchObject({ contact_id: lead.contactId, contact_point_id: null })
+  })
+})
+
 describe('eraseContactData', () => {
   it('leaves no number, name or name_latin, keeps the company and anonymised activities, logs erased', async () => {
     const user = await newUser('privacy-erase')
