@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: 'More | ThrivvSkale CRM' }
 
 const LINKS = [
   { href: '/more/settings', label: 'Settings', hint: 'Glass effects and other preferences' },
+  { href: '/more/targets', label: 'Daily targets', hint: 'Calls, conversations and demos per day' },
   { href: '/more/import', label: 'Import leads', hint: 'Add leads from a CSV file' },
 ]
 

@@ -1,29 +1,25 @@
 'use client'
 /**
  * The top bar (glass level 1): quick add, the command palette button, today's
- * targets, sync status and a clock. Targets and sync show sample values from
- * lib/shell/placeholder-status.ts until their data exists. Mounted by the app layout.
+ * targets, sync status and a clock. Targets are real numbers passed in by the
+ * app layout; the sync chip still shows a sample value (lib/shell/placeholder-status.ts).
  */
 import { Surface } from '@/components/glass/Surface'
 import { openPalette } from '@/lib/shell/palette-store'
-import {
-  PLACEHOLDER_NOTE,
-  PLACEHOLDER_SYNC,
-  PLACEHOLDER_TARGETS,
-  STATUS_IS_PLACEHOLDER,
-} from '@/lib/shell/placeholder-status'
+import type { MenuTargets } from '@/lib/shell/loadMenuTargets'
+import { PLACEHOLDER_NOTE, PLACEHOLDER_SYNC, SYNC_IS_PLACEHOLDER } from '@/lib/shell/placeholder-status'
 import { Clock } from './Clock'
 
 // Every label sits on an opaque chip, not on the L1 blur (why: lib/shell/menu-bar-text.ts). The tokens are
 // spelled out in full so Tailwind finds them; menu-bar-contrast.test.ts checks they match that file.
 const CHIP_CLASS =
-  'rounded-full bg-(--glass-l2-solid) text-(--glass-text) forced-colors:bg-[Canvas] forced-colors:border'
+  'whitespace-nowrap rounded-full bg-(--glass-l2-solid) text-(--glass-text) forced-colors:bg-[Canvas] forced-colors:border'
 
 const BUTTON_CLASS =
   `${CHIP_CLASS} flex h-9 min-w-9 items-center justify-center px-2 text-sm transition-[filter] ` +
   'hover:brightness-95 dark:hover:brightness-125'
 
-const SAMPLE_HINT = 'Sample value: this is not connected to real data yet'
+const SAMPLE_HINT = 'Sample value: sync status is not connected to real data yet'
 
 // Muted ring while the data is made up; a solid green dot only once a real sync reports.
 const DOT_PLACEHOLDER = 'size-2 rounded-full border border-current opacity-60'
@@ -39,8 +35,14 @@ function openQuickAdd(): void {
   openPalette('add')
 }
 
-export function MenuBar() {
-  const { callsDone, callsGoal } = PLACEHOLDER_TARGETS
+/** "Calls 3/40", or just "Calls 3" when no goal is set (or the numbers could not be read). */
+function TargetsText({ targets }: { targets: MenuTargets | null }) {
+  if (targets === null) return <>Calls</>
+  const { callsDone, callsGoal } = targets
+  return <>Calls <strong className="tabular-nums">{callsGoal > 0 ? `${callsDone}/${callsGoal}` : callsDone}</strong></>
+}
+
+export function MenuBar({ targets }: { targets: MenuTargets | null }) {
   return (
     <Surface
       level="L1"
@@ -72,19 +74,18 @@ export function MenuBar() {
       </button>
 
       <div className={`${CHIP_CLASS} ml-auto flex h-9 items-center gap-3 px-3 text-sm`}>
-        <span data-testid="targets" title={SAMPLE_HINT}>
-          Calls <strong className="tabular-nums">{callsDone}/{callsGoal}</strong>{' '}
-          {STATUS_IS_PLACEHOLDER && <SampleTag />}
+        <span data-testid="targets">
+          <TargetsText targets={targets} />
         </span>
         <span
           data-testid="sync-status"
-          data-placeholder={STATUS_IS_PLACEHOLDER}
-          title={SAMPLE_HINT}
+          data-placeholder={SYNC_IS_PLACEHOLDER}
+          title={SYNC_IS_PLACEHOLDER ? SAMPLE_HINT : undefined}
           className="flex items-center gap-1.5"
         >
-          <span aria-hidden="true" className={STATUS_IS_PLACEHOLDER ? DOT_PLACEHOLDER : DOT_LIVE} />
+          <span aria-hidden="true" className={SYNC_IS_PLACEHOLDER ? DOT_PLACEHOLDER : DOT_LIVE} />
           <span className="sr-only sm:not-sr-only">{PLACEHOLDER_SYNC.label}</span>{' '}
-          {STATUS_IS_PLACEHOLDER && <SampleTag />}
+          {SYNC_IS_PLACEHOLDER && <SampleTag />}
         </span>
         <Clock />
       </div>

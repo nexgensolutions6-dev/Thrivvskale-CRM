@@ -102,8 +102,8 @@ test.describe('App shell', () => {
     await expect(bar.getByTestId('targets')).toBeVisible()
     await expect(bar.getByTestId('sync-status')).toBeVisible()
     await expect(bar.locator('time')).toHaveText(/\d{1,2}:\d{2}/)
-    // Placeholders say so, in text a screen reader reads as well.
-    await expect(bar.getByTestId('targets')).toContainText(/sample/i)
+    // Targets are real now; the sync chip is still a placeholder and says so, in text a screen reader reads.
+    await expect(bar.getByTestId('targets')).not.toContainText(/sample/i)
     await expect(bar.getByTestId('sync-status')).toContainText(/sample/i)
   })
 
@@ -113,13 +113,13 @@ test.describe('App shell', () => {
       await page.goto('/today')
       const bar = page.getByTestId('menu-bar')
       // toBeVisible fails for sr-only text that is merely clipped to 1px, which is the bug this guards.
-      for (const id of ['targets', 'sync-status']) {
-        const tag = bar.getByTestId(id).getByText('sample', { exact: true })
-        await expect(tag).toBeVisible()
-        const box = await tag.boundingBox()
-        expect(box?.width ?? 0, `${id} sample tag width at ${name}`).toBeGreaterThan(20)
-        expect(box?.height ?? 0, `${id} sample tag height at ${name}`).toBeGreaterThan(8)
-      }
+      const tag = bar.getByTestId('sync-status').getByText('sample', { exact: true })
+      await expect(tag).toBeVisible()
+      const box = await tag.boundingBox()
+      expect(box?.width ?? 0, `sync sample tag width at ${name}`).toBeGreaterThan(20)
+      expect(box?.height ?? 0, `sync sample tag height at ${name}`).toBeGreaterThan(8)
+      await expect(bar.getByTestId('targets')).not.toContainText(/sample/i)
+      await expect(bar.getByTestId('targets')).not.toHaveAttribute('title', /sample/i)
       const sync = bar.getByTestId('sync-status')
       await expect(sync).toHaveAttribute('data-placeholder', 'true')
       // The dot is a hollow ring (transparent fill), never the green "live" dot.
@@ -136,6 +136,23 @@ test.describe('App shell', () => {
       const tagBox = await bar.getByTestId('targets').boundingBox()
       expect(tagBox?.x ?? 0, 'targets start after the palette button').toBeGreaterThanOrEqual(
         (paletteBox?.x ?? 0) + (paletteBox?.width ?? 0),
+      )
+      await expectNoHorizontalScroll(page)
+    })
+  }
+
+  for (const width of [360, 390]) {
+    test(`the menu bar chip stays on one line at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto('/today')
+      const bar = page.getByTestId('menu-bar')
+      const chip = bar.getByTestId('targets').locator('xpath=..')
+      const box = await chip.boundingBox()
+      // h-9 is 36px; a wrapped label would push the chip taller.
+      expect(box?.height ?? 0, `chip height at ${width}px`).toBeLessThanOrEqual(36)
+      const barBox = await bar.boundingBox()
+      expect((box?.x ?? 0) + (box?.width ?? 0), 'chip right edge').toBeLessThanOrEqual(
+        (barBox?.x ?? 0) + (barBox?.width ?? 0),
       )
       await expectNoHorizontalScroll(page)
     })

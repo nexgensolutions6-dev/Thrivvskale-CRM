@@ -12,19 +12,21 @@ import { MenuBar } from '@/components/shell/MenuBar'
 import { ShellCommands } from '@/components/shell/ShellCommands'
 import { TabBar } from '@/components/shell/TabBar'
 import { wallpaperStyle } from '@/lib/glass/wallpaper-style'
+import { loadMenuTargets } from '@/lib/shell/loadMenuTargets'
 import { getSessionWorkspace } from '@/lib/workspace'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   // Sends visitors without a session to /login (and creates a missing workspace).
   // Pages that read data call this again; it is cached, so the second call is free.
-  await getSessionWorkspace()
+  const { workspaceId } = await getSessionWorkspace()
+  const targets = await loadMenuTargets(workspaceId)
 
   return (
     <div className="relative isolate min-h-dvh">
       <div aria-hidden="true" className="glass-wallpaper fixed inset-0 -z-10" style={wallpaperStyle('aurora')} />
       <GlassModeController />
       <ShellCommands />
-      <MenuBar />
+      <MenuBar targets={targets} />
       <main className="mx-auto w-full max-w-5xl px-4 pt-24 pb-28 md:pb-32">{children}</main>
       <Dock />
       <TabBar />
