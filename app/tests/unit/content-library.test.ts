@@ -4,10 +4,11 @@
  * a template message for one phone point.
  */
 import { describe, expect, it } from 'vitest'
+import { buildCallTemplateMessage } from '@/lib/content/buildCallTemplateMessage'
 import { buildTemplateMessage } from '@/lib/content/buildTemplateMessage'
 import { groupTemplates } from '@/lib/content/groupTemplates'
 import { pickObjectionResponse } from '@/lib/content/pickObjectionResponse'
-import type { CallObjection, CallTemplate } from '@/lib/call/callScreen'
+import type { CallObjection, CallPoint, CallTemplate } from '@/lib/call/callScreen'
 import type { ContentVariant } from '@/lib/language/types'
 
 function variant(id: string, mix: ContentVariant['mix'], body: string, parent: string | null = null): ContentVariant {
@@ -117,5 +118,18 @@ describe('buildTemplateMessage', () => {
   it('returns null when no variant of the template fits', () => {
     const teluguOnly: CallTemplate = { ...template, variants: [{ ...template.variants[0], mix: ['te'] }] }
     expect(buildTemplateMessage(teluguOnly, point, ['hi'], who)).toBeNull()
+  })
+})
+
+describe('buildCallTemplateMessage', () => {
+  const template: CallTemplate = {
+    id: 'a', title: 'Thanks',
+    variants: [{ ...variant('a', ['en'], 'Hello {name} {honorific}'), kind: 'template' }],
+  }
+  const point = { e164: '+919866100001', waStatus: 'unconfirmed' as const, mix: ['te', 'en'], greetingName: 'Ramesh' } as unknown as CallPoint
+
+  it('uses the mix spoken on the call, not the saved mix of the number, for the honorific', () => {
+    expect(buildCallTemplateMessage(template, point, 'Sri Coaching', ['hi', 'en'])?.text).toBe('Hello Ramesh ji')
+    expect(buildCallTemplateMessage(template, point, 'Sri Coaching', ['te', 'en'])?.text).toBe('Hello Ramesh garu')
   })
 })

@@ -155,7 +155,7 @@ export function OutcomeSheet(props: OutcomeSheetProps) {
         </fieldset>
       )}
 
-      <TemplatePicker templates={templates} point={point} companyName={lead.name} />
+      <TemplatePicker templates={templates} point={point} companyName={lead.name} mix={mix} />
 
       {outcome === 'not_interested' && (
         <label className="grid gap-1 text-sm">

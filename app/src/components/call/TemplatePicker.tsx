@@ -8,26 +8,23 @@
 import { useState } from 'react'
 import { BUTTON, CHIP, FIELD, MUTED } from '@/components/lead/styles'
 import type { CallPoint, CallTemplate } from '@/lib/call/callScreen'
-import { buildTemplateMessage } from '@/lib/content/buildTemplateMessage'
-import { honorificFor } from '@/lib/language/honorific'
+import { buildCallTemplateMessage } from '@/lib/content/buildCallTemplateMessage'
+import type { Mix } from '@/lib/domain'
 
 export interface TemplatePickerProps {
   templates: CallTemplate[]
   point: CallPoint
   companyName: string
+  /** The mix spoken on this call (the sheet's chips), not the number's saved mix. */
+  mix: Mix
 }
 
-export function TemplatePicker({ templates, point, companyName }: TemplatePickerProps) {
+export function TemplatePicker({ templates, point, companyName, mix }: TemplatePickerProps) {
   const [templateId, setTemplateId] = useState('')
   if (templates.length === 0) return null
 
   const template = templates.find((option) => option.id === templateId)
-  const who = {
-    name: point.greetingName,
-    company: companyName,
-    honorific: honorificFor(point.mix[0] ?? 'en', 'formal'),
-  }
-  const message = template ? buildTemplateMessage(template, point, point.mix, who) : null
+  const message = template ? buildCallTemplateMessage(template, point, companyName, mix) : null
 
   return (
     <section aria-labelledby="template-heading" className="flex flex-col gap-2">
