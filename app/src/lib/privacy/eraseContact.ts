@@ -26,6 +26,6 @@ export async function eraseContactData(
   const id = requireId('contactId', contactId)
   const { data, error } = await db.rpc('erase_contact', { p_workspace_id: workspaceId, p_contact_id: id })
   if (error) throw stepError(MODULE, `erase contact ${id}`, error)
-  const audioNotRemoved = await removeErasedAudio(db, id, data ?? [])
+  const audioNotRemoved = await removeErasedAudio(db, workspaceId, id, data ?? [])
   return { audioNotRemoved }
 }

@@ -41,8 +41,8 @@ export async function eraseContact(contactId: unknown): Promise<EraseActionResul
   try {
     const db = await createSupabaseServerClient()
     const { audioNotRemoved } = await eraseContactData(db, workspaceId, contactId)
-    // On an audio failure the page is not refreshed, so the form can still show the warning.
-    if (audioNotRemoved.length === 0) refreshLeadPage()
+    // The erase went through either way; PrivacyMenu keeps any audio warning across the refresh.
+    refreshLeadPage()
     return { ok: true, audioNotRemoved: audioNotRemoved.length }
   } catch (error) {
     return failureResult('eraseContact', error)

@@ -4,7 +4,8 @@
  * "Export data" and "Erase" for one person in the PrivacyMenu. Export saves
  * the exportContact JSON as a file; Erase asks once more, then calls
  * eraseContact (the person's numbers, name, notes and audio go; the company
- * and its company-level notes stay) and refreshes.
+ * and its company-level notes stay) and refreshes. This row disappears with
+ * the person, so an audio warning is handed to PrivacyMenu via onErased.
  */
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
@@ -26,7 +27,14 @@ function saveJsonFile(fileName: string, data: unknown): void {
   setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS)
 }
 
-export function ContactPrivacyActions({ contactId, label }: { contactId: string; label: string }) {
+export interface ContactPrivacyActionsProps {
+  contactId: string
+  label: string
+  /** Called after a finished erase with how many voice-note files are still in storage. */
+  onErased: (audioNotRemoved: number) => void
+}
+
+export function ContactPrivacyActions({ contactId, label, onErased }: ContactPrivacyActionsProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [confirming, setConfirming] = useState(false)
@@ -58,10 +66,7 @@ export function ContactPrivacyActions({ contactId, label }: { contactId: string;
       const result = await eraseContact(contactId)
       if (!result.ok) return { text: result.message, isError: true }
       setConfirming(false)
-      if (result.audioNotRemoved > 0) {
-        const count = result.audioNotRemoved
-        return { text: `Erased, but ${count} voice note file(s) could not be deleted. Reload the page and tell an admin.`, isError: true }
-      }
+      onErased(result.audioNotRemoved)
       router.refresh()
       return null
     })

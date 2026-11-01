@@ -62,11 +62,15 @@ grant execute on function public.set_company_dnd(uuid, uuid, boolean, text) to a
 -- ---------------------------------------------------------------------------
 -- Import-row scrubbing helpers (used by erase_contact step 3)
 -- ---------------------------------------------------------------------------
--- A raw CSV cell is "the person's" when its digits contain one of their
--- numbers (last 9 digits, at least 7), or when the whole cell is their name
+-- A raw CSV cell is "the person's" when one of its numbers contains one of
+-- theirs (last 9 digits, at least 7), or when the whole cell is their name
 -- (case and spacing ignored). Names never match part of a cell, so a short
 -- name such as "Sai" does not blank "Sai Dental Clinic".
 
+-- The cell is cut into number runs at anything that cannot be part of a
+-- written phone number (letters, "," ";" "/" ...), so "98480, 22338" is two
+-- runs and never matches 9848022338. Spaces, "+", "-", "(", ")" and "." stay
+-- inside a run: "+91 98480 22338" is one number.
 create function public.import_cell_has_number(p_cell text, p_tails text[])
 returns boolean
 language sql
@@ -74,9 +78,11 @@ immutable
 set search_path = ''
 as $$
   select exists (
-    select 1 from unnest(p_tails) as tail(digits)
+    select 1
+    from regexp_split_to_table(p_cell, '[^0-9\s+().-]+') as run(chars)
+    cross join unnest(p_tails) as tail(digits)
     where length(tail.digits) >= 7
-      and strpos(regexp_replace(p_cell, '\D', '', 'g'), tail.digits) > 0
+      and strpos(regexp_replace(run.chars, '\D', '', 'g'), tail.digits) > 0
   );
 $$;
 
@@ -148,7 +154,10 @@ grant execute on function public.scrub_import_cells(jsonb, text[], text[]) to au
 --
 -- Steps, in order:
 --   1. note the voice-note audio paths of the person's activities (returned,
---      so the caller can remove the files from the voice-notes bucket);
+--      so the caller can remove the files from the voice-notes bucket). Only
+--      paths inside this workspace's folder are returned: storagePath is
+--      member-written metadata, and a path into another workspace's folder
+--      must never reach the delete;
 --   2. anonymise those activities (linked by contact or by one of their
 --      numbers): body cleared, metadata replaced by an erased marker;
 --   3. clear the free text on their calls (who_answered, lost_reason) and
@@ -159,7 +168,7 @@ grant execute on function public.scrub_import_cells(jsonb, text[], text[]) to au
 --      so it is not orphaned when the numbers go;
 --   6. delete the person's numbers, then the contact row;
 --   7. log erased with company_id and contact_id.
--- Returns the voice-note storage paths (may be empty).
+-- Returns the voice-note storage paths, all under '<p_workspace_id>/' (may be empty).
 
 create function public.erase_contact(p_workspace_id uuid, p_contact_id uuid)
 returns text[]
@@ -200,11 +209,13 @@ begin
   where a.workspace_id = p_workspace_id
     and (a.contact_id = p_contact_id or a.contact_point_id = any (v_point_ids));
 
-  -- 1. Audio files: the path is in the metadata that step 2 replaces.
+  -- 1. Audio files: the path is in the metadata that step 2 replaces. Only
+  --    this workspace's folder (see the step list above).
   select coalesce(array_agg(a.metadata ->> 'storagePath'), '{}') into v_audio_paths
   from public.activities a
   where a.workspace_id = p_workspace_id and a.id = any (v_activity_ids)
-    and a.type = 'voice_note' and a.metadata ->> 'storagePath' is not null;
+    and a.type = 'voice_note'
+    and starts_with(a.metadata ->> 'storagePath', p_workspace_id::text || '/');
 
   -- 2. Anonymised timeline: the row (type, time, company) stays, the content goes.
   update public.activities a
@@ -257,15 +268,23 @@ grant execute on function public.erase_contact(uuid, uuid) to authenticated, ser
 -- contact_import_cells: the raw import cells that hold one person's data
 -- ---------------------------------------------------------------------------
 -- The same rows and cells erase_contact step 4 would blank, for the data
--- export. Read-only, SECURITY INVOKER. Caller: src/lib/privacy/readContactExport.ts.
+-- export. Read-only, SECURITY INVOKER; a non-member gets error 42501, like
+-- erase_contact. Caller: src/lib/privacy/readContactExport.ts.
 
 create function public.contact_import_cells(p_workspace_id uuid, p_contact_id uuid)
 returns table (import_row_id uuid, batch_id uuid, row_number integer, cell_key text, cell_value text)
-language sql
+language plpgsql
 stable
 security invoker
 set search_path = ''
 as $$
+begin
+  if not public.is_member(p_workspace_id) then
+    raise exception '[contact_import_cells] check membership failed: not a member of workspace %', p_workspace_id
+      using errcode = '42501';
+  end if;
+
+  return query
   with person as (
     select k.company_id,
            array_remove(array[public.normalise_name(k.name), public.normalise_name(k.name_latin)], null) as names,
@@ -287,6 +306,7 @@ as $$
     and (public.import_cell_has_number(cell.value #>> '{}', person.tails)
          or public.import_cell_is_name(cell.value #>> '{}', person.names))
   order by r.batch_id, r.row_number, cell.key;
+end;
 $$;
 
 revoke execute on function public.contact_import_cells(uuid, uuid) from public, anon;

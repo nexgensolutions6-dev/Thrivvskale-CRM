@@ -2,7 +2,8 @@
  * Reads everything held about one person, for a data export: the contact row,
  * their numbers, the activities linked to them or their numbers (calls, notes,
  * WhatsApp), the call and pain-point rows of those activities, their
- * consent history, and the raw import cells holding their name or numbers. Company-level rows are not theirs and are left out.
+ * consent history, and the raw import cells holding their name or numbers.
+ * Company-level rows are not theirs and are left out.
  * Called by exportContact; uses the user's client, so RLS applies.
  */
 import type { SupabaseClient } from '@supabase/supabase-js'

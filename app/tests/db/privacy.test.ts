@@ -4,8 +4,9 @@
  * name or name_latin left; company and anonymised activities kept; logs
  * erased), exportContactData (everything held, logs exported) and
  * setContactPointVisibility, plus readOpenTasks hiding a DND company's
- * tasks. Also checks workspace scoping and input validation. Local Supabase
- * stack only.
+ * tasks, erase never touching audio outside the workspace folder, and the
+ * import_cell_has_number matcher. Also checks workspace scoping and input
+ * validation. Local Supabase stack only.
  */
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -203,6 +204,42 @@ describe('eraseContactData', () => {
   })
 })
 
+describe('eraseContactData audio paths', () => {
+  it('never returns or removes a path outside the workspace folder, and reports a file that is not there', async () => {
+    const user = await newUser('privacy-audio-own')
+    const other = await newUser('privacy-audio-other')
+    const admin = adminClient(stack)
+    // The eraser also belongs to the other workspace, so the bucket policy alone would allow the delete.
+    const joined = await admin.from('members').insert({ workspace_id: other.workspaceId, user_id: user.userId, role: 'owner' })
+    if (joined.error) throw joined.error
+    const lead = await seedLead(user)
+    const foreignPath = `${other.workspaceId}/${randomUUID()}.webm`
+    const upload = await other.client.storage.from('voice-notes').upload(foreignPath, WEBM, { contentType: 'audio/webm' })
+    if (upload.error) throw upload.error
+    const missingPath = `${user.workspaceId}/${randomUUID()}.webm`
+    for (const storagePath of [foreignPath, missingPath]) {
+      await insertId(user, 'activities', {
+        company_id: lead.companyId, contact_id: lead.contactId, type: 'voice_note', metadata: { storagePath },
+      })
+    }
+
+    const returned = await user.client.rpc('erase_contact', { p_workspace_id: user.workspaceId, p_contact_id: lead.contactId })
+    expect(returned.error).toBeNull()
+    expect(returned.data).toEqual([missingPath])
+
+    const secondId = await insertId(user, 'contacts', { company_id: lead.companyId, name: 'Second Person' })
+    await insertId(user, 'activities', {
+      company_id: lead.companyId, contact_id: secondId, type: 'voice_note', metadata: { storagePath: missingPath },
+    })
+    const result = await eraseContactData(user.client, user.workspaceId, secondId)
+    expect(result).toEqual({ audioNotRemoved: [missingPath] })
+
+    const files = await admin.storage.from('voice-notes').list(other.workspaceId, { limit: 100 })
+    expect(files.data?.map((file) => `${other.workspaceId}/${file.name}`)).toContain(foreignPath)
+    await admin.storage.from('voice-notes').remove([foreignPath])
+  })
+})
+
 describe('exportContactData', () => {
   it('returns the contact, numbers, activities and notes, and logs exported', async () => {
     const user = await newUser('privacy-export')
@@ -249,6 +286,53 @@ describe('readOpenTasks', () => {
   })
 })
 
+describe('readOpenTasks row limit', () => {
+  it('applies the 500-row limit after leaving out DND tasks, and keeps tasks with no company', async () => {
+    const user = await newUser('privacy-task-limit')
+    const { companyId } = await seedLead(user)
+    await setCompanyDnd(user.client, user.workspaceId, companyId, true)
+    const dndTasks = Array.from({ length: 500 }, (_, index) => ({
+      workspace_id: user.workspaceId, company_id: companyId, type: 'callback' as const, title: `DND ${index}`,
+      due_at: new Date(Date.UTC(2026, 9, 1, 0, index)).toISOString(),
+    }))
+    const seeded = await user.client.from('tasks').insert(dndTasks)
+    if (seeded.error) throw seeded.error
+    const callableCompanyId = await insertId(user, 'companies', { name: 'Callable Clinic', base_score: 10 })
+    const callableId = await insertId(user, 'tasks', {
+      company_id: callableCompanyId, type: 'callback', title: 'Call back', due_at: '2026-11-02T03:00:00Z',
+    })
+    const looseId = await insertId(user, 'tasks', { company_id: null, type: 'callback', title: 'Loose', due_at: '2026-11-02T03:30:00Z' })
+
+    const tasks = await readOpenTasks(user.client, user.workspaceId, NOW)
+    expect(tasks.map((task) => task.id)).toEqual([callableId, looseId])
+    expect(tasks[0].companyName).toBe('Callable Clinic')
+  })
+})
+
+describe('import_cell_has_number', () => {
+  const TAILS = ['848022338']
+  const cases: [string, boolean][] = [
+    ['98480 22338', true],
+    ['+91 98480-22338', true],
+    ['Phone: (98480) 22338', true],
+    ['98480, 22338', false],
+    ['98480 / 22338', false],
+    ['98480; 22338', false],
+    ['98480 or 22338', false],
+    ['90000 12345, 98480 22338', true],
+  ]
+  let user: TestUser
+  beforeAll(async () => {
+    user = await newUser('privacy-match')
+  }, SETUP_TIMEOUT)
+
+  it.each(cases)('%s -> %s', async (cell, expected) => {
+    const result = await user.client.rpc('import_cell_has_number', { p_cell: cell, p_tails: TAILS })
+    expect(result.error).toBeNull()
+    expect(result.data).toBe(expected)
+  })
+})
+
 describe('setContactPointVisibility', () => {
   it('sets owner_only and back to workspace', async () => {
     const user = await newUser('privacy-visibility')
@@ -273,6 +357,8 @@ describe('workspace scoping and input checks', () => {
     await expect(eraseContactData(stranger.client, owner.workspaceId, lead.contactId)).rejects.toThrow('[erase_contact]')
     await expect(exportContactData(stranger.client, stranger.workspaceId, lead.contactId)).rejects.toThrow(lead.contactId)
     await expect(exportContactData(stranger.client, owner.workspaceId, lead.contactId)).rejects.toThrow(lead.contactId)
+    const cells = await stranger.client.rpc('contact_import_cells', { p_workspace_id: owner.workspaceId, p_contact_id: lead.contactId })
+    expect(cells.error).toMatchObject({ code: '42501', message: expect.stringContaining('[contact_import_cells]') })
     await expect(setContactPointVisibility(stranger.client, stranger.workspaceId, lead.mobileId, 'owner_only')).rejects.toThrow(lead.mobileId)
 
     const admin = adminClient(stack)
