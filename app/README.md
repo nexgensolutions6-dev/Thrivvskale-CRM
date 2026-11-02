@@ -68,7 +68,7 @@ commit or a screenshot.
    near India, for example Mumbai). Save the database password in your password
    manager.
 2. **USER ACTION** From `app/`, link and push the schema. This applies migrations
-   `0001` to `0007` in order and nothing else:
+   `0001` to `0008` in order and nothing else:
    ```bash
    npx supabase login
    npx supabase link --project-ref <your-project-ref>
