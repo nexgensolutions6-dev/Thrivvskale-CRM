@@ -1,0 +1,655 @@
+{
+  "generatedBy": "scripts/render-wallpapers.mjs",
+  "files": [
+    "aurora-light-sm.avif",
+    "aurora-light-sm.webp",
+    "aurora-light-lg.avif",
+    "aurora-light-lg.webp",
+    "aurora-dark-sm.avif",
+    "aurora-dark-sm.webp",
+    "aurora-dark-lg.avif",
+    "aurora-dark-lg.webp",
+    "sunset-light-sm.avif",
+    "sunset-light-sm.webp",
+    "sunset-light-lg.avif",
+    "sunset-light-lg.webp",
+    "sunset-dark-sm.avif",
+    "sunset-dark-sm.webp",
+    "sunset-dark-lg.avif",
+    "sunset-dark-lg.webp",
+    "lagoon-light-sm.avif",
+    "lagoon-light-sm.webp",
+    "lagoon-light-lg.avif",
+    "lagoon-light-lg.webp",
+    "lagoon-dark-sm.avif",
+    "lagoon-dark-sm.webp",
+    "lagoon-dark-lg.avif",
+    "lagoon-dark-lg.webp",
+    "orchid-light-sm.avif",
+    "orchid-light-sm.webp",
+    "orchid-light-lg.avif",
+    "orchid-light-lg.webp",
+    "orchid-dark-sm.avif",
+    "orchid-dark-sm.webp",
+    "orchid-dark-lg.avif",
+    "orchid-dark-lg.webp",
+    "citrus-light-sm.avif",
+    "citrus-light-sm.webp",
+    "citrus-light-lg.avif",
+    "citrus-light-lg.webp",
+    "citrus-dark-sm.avif",
+    "citrus-dark-sm.webp",
+    "citrus-dark-lg.avif",
+    "citrus-dark-lg.webp",
+    "glacier-light-sm.avif",
+    "glacier-light-sm.webp",
+    "glacier-light-lg.avif",
+    "glacier-light-lg.webp",
+    "glacier-dark-sm.avif",
+    "glacier-dark-sm.webp",
+    "glacier-dark-lg.avif",
+    "glacier-dark-lg.webp"
+  ],
+  "wallpapers": [
+    {
+      "id": "aurora",
+      "name": "Aurora",
+      "themes": {
+        "light": [
+          {
+            "region": "top-left",
+            "darkest": "#af91f6",
+            "lightest": "#b8a2e9"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#ada2ec",
+            "lightest": "#92c6dd"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#9fc4db",
+            "lightest": "#7adcd7"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#b693f2",
+            "lightest": "#c9a4e4"
+          },
+          {
+            "region": "centre",
+            "darkest": "#b9a4e8",
+            "lightest": "#a3c2db"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#b8bcd9",
+            "lightest": "#88d7d6"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#c297ed",
+            "lightest": "#dca5de"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#caa5e3",
+            "lightest": "#d3b3d8"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#c1b9d9",
+            "lightest": "#a1ccd6"
+          }
+        ],
+        "dark": [
+          {
+            "region": "top-left",
+            "darkest": "#5024bf",
+            "lightest": "#5b31ac"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#5033b0",
+            "lightest": "#3b5698"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#475295",
+            "lightest": "#256c8b"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#5725ba",
+            "lightest": "#6b2fa4"
+          },
+          {
+            "region": "centre",
+            "darkest": "#5c32aa",
+            "lightest": "#4a4f96"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#5e4693",
+            "lightest": "#32658c"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#6225b2",
+            "lightest": "#7d2c9b"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#6d2fa2",
+            "lightest": "#783991"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#6d3f92",
+            "lightest": "#49588c"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sunset",
+      "name": "Sunset",
+      "themes": {
+        "light": [
+          {
+            "region": "top-left",
+            "darkest": "#ed7ebb",
+            "lightest": "#ea93af"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#e492b9",
+            "lightest": "#e9ac9e"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#dfabae",
+            "lightest": "#ebb794"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#eb7fbd",
+            "lightest": "#e391ba"
+          },
+          {
+            "region": "centre",
+            "darkest": "#db93c5",
+            "lightest": "#deaab0"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#d0aac5",
+            "lightest": "#deb5a8"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#e980bf",
+            "lightest": "#d296d1"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#da93c6",
+            "lightest": "#cfa9c7"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#c1abda",
+            "lightest": "#cdb4c3"
+          }
+        ],
+        "dark": [
+          {
+            "region": "top-left",
+            "darkest": "#8b2752",
+            "lightest": "#971e4e"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#872b50",
+            "lightest": "#8e3637"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#823548",
+            "lightest": "#8f3c2e"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#80275e",
+            "lightest": "#961d52"
+          },
+          {
+            "region": "centre",
+            "darkest": "#723160",
+            "lightest": "#81344b"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#70335f",
+            "lightest": "#803a42"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#73296b",
+            "lightest": "#911e57"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#5e3274",
+            "lightest": "#7e2860"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#5d3375",
+            "lightest": "#6a385d"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lagoon",
+      "name": "Lagoon",
+      "themes": {
+        "light": [
+          {
+            "region": "top-left",
+            "darkest": "#79e6e0",
+            "lightest": "#74eae1"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#86d8ea",
+            "lightest": "#74e5ea"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#91cbf7",
+            "lightest": "#83d8f0"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#79e6df",
+            "lightest": "#7aebd2"
+          },
+          {
+            "region": "centre",
+            "darkest": "#87d8e9",
+            "lightest": "#7fe6d3"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#91cbf5",
+            "lightest": "#89d8e4"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#7fe7d1",
+            "lightest": "#80ecc3"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#89d9e2",
+            "lightest": "#83e8c6"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#91ccf4",
+            "lightest": "#8bdbda"
+          }
+        ],
+        "dark": [
+          {
+            "region": "top-left",
+            "darkest": "#106877",
+            "lightest": "#106d6d"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#1a5a87",
+            "lightest": "#146971"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#204b9a",
+            "lightest": "#195989"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#136a70",
+            "lightest": "#137061"
+          },
+          {
+            "region": "centre",
+            "darkest": "#1b5a86",
+            "lightest": "#176c68"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#214c9b",
+            "lightest": "#1d5b82"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#176c66",
+            "lightest": "#167356"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#1d5c80",
+            "lightest": "#196f5d"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#214d99",
+            "lightest": "#1d5f78"
+          }
+        ]
+      }
+    },
+    {
+      "id": "orchid",
+      "name": "Orchid",
+      "themes": {
+        "light": [
+          {
+            "region": "top-left",
+            "darkest": "#dd86f8",
+            "lightest": "#cc9af1"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#d793ee",
+            "lightest": "#cdaadc"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#dba4d4",
+            "lightest": "#d9afca"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#d58cf8",
+            "lightest": "#bba6f4"
+          },
+          {
+            "region": "centre",
+            "darkest": "#ca9cf0",
+            "lightest": "#b8b4e6"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#ccabdb",
+            "lightest": "#c3b7d7"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#c997f9",
+            "lightest": "#a8b4f8"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#b9a8f4",
+            "lightest": "#a1c0f0"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#b6b5e6",
+            "lightest": "#a9c2e6"
+          }
+        ],
+        "dark": [
+          {
+            "region": "top-left",
+            "darkest": "#702f98",
+            "lightest": "#80279f"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#72307c",
+            "lightest": "#7b2b93"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#782f70",
+            "lightest": "#8c2859"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#5e369d",
+            "lightest": "#782aa0"
+          },
+          {
+            "region": "centre",
+            "darkest": "#613688",
+            "lightest": "#6e3097"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#673475",
+            "lightest": "#7d2d64"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#5a35a2",
+            "lightest": "#6b2fa2"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#5a398c",
+            "lightest": "#483ea2"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#5a397f",
+            "lightest": "#434199"
+          }
+        ]
+      }
+    },
+    {
+      "id": "citrus",
+      "name": "Citrus",
+      "themes": {
+        "light": [
+          {
+            "region": "top-left",
+            "darkest": "#c0e77a",
+            "lightest": "#e4e25f"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#bee77b",
+            "lightest": "#bced72"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#b0ed7d",
+            "lightest": "#baf16f"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#abe78f",
+            "lightest": "#d2e46f"
+          },
+          {
+            "region": "centre",
+            "darkest": "#a2e994",
+            "lightest": "#afed7f"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#9fed8f",
+            "lightest": "#b3f075"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#8fe8a9",
+            "lightest": "#b5e588"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#87e9ae",
+            "lightest": "#9ded92"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#8beca6",
+            "lightest": "#a9f081"
+          }
+        ],
+        "dark": [
+          {
+            "region": "top-left",
+            "darkest": "#686225",
+            "lightest": "#55682e"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#626522",
+            "lightest": "#43702e"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#4a6e25",
+            "lightest": "#407128"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#5f642c",
+            "lightest": "#426d3f"
+          },
+          {
+            "region": "centre",
+            "darkest": "#53692f",
+            "lightest": "#38723c"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#42702e",
+            "lightest": "#387234"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#506838",
+            "lightest": "#2d7252"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#3f6e41",
+            "lightest": "#2a744b"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#31723a",
+            "lightest": "#2b744b"
+          }
+        ]
+      }
+    },
+    {
+      "id": "glacier",
+      "name": "Glacier",
+      "themes": {
+        "light": [
+          {
+            "region": "top-left",
+            "darkest": "#c1c0fc",
+            "lightest": "#bbd5fa"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#b9d3f9",
+            "lightest": "#b5e4f8"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#b1e5f5",
+            "lightest": "#aeebf3"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#c0bffb",
+            "lightest": "#bad1f9"
+          },
+          {
+            "region": "centre",
+            "darkest": "#b7d2f7",
+            "lightest": "#ace6f1"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#b0e5f4",
+            "lightest": "#a8eeee"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#c0bffb",
+            "lightest": "#b4d4f4"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#b6d2f6",
+            "lightest": "#a7eaed"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#abe7f0",
+            "lightest": "#a2f1ea"
+          }
+        ],
+        "dark": [
+          {
+            "region": "top-left",
+            "darkest": "#4134a4",
+            "lightest": "#2b4a97"
+          },
+          {
+            "region": "top-centre",
+            "darkest": "#2f4898",
+            "lightest": "#1a5e87"
+          },
+          {
+            "region": "top-right",
+            "darkest": "#175d8a",
+            "lightest": "#126680"
+          },
+          {
+            "region": "middle-left",
+            "darkest": "#4631a7",
+            "lightest": "#314799"
+          },
+          {
+            "region": "centre",
+            "darkest": "#314897",
+            "lightest": "#1b6182"
+          },
+          {
+            "region": "middle-right",
+            "darkest": "#195f86",
+            "lightest": "#136a79"
+          },
+          {
+            "region": "bottom-left",
+            "darkest": "#4731a5",
+            "lightest": "#324a92"
+          },
+          {
+            "region": "bottom-centre",
+            "darkest": "#324895",
+            "lightest": "#1b657b"
+          },
+          {
+            "region": "bottom-right",
+            "darkest": "#1a6281",
+            "lightest": "#136e72"
+          }
+        ]
+      }
+    }
+  ]
+}

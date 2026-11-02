@@ -1,0 +1,692 @@
+[
+  {
+    "region": "Telangana",
+    "date": "2026-01-14",
+    "name": "Bhogi"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-01-15",
+    "name": "Sankranti / Pongal"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-01-26",
+    "name": "Republic Day"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-02-15",
+    "name": "Maha Shivaratri"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-03-03",
+    "name": "Holi"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-03-19",
+    "name": "Ugadi"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-03-21",
+    "name": "Eid-ul-Fitr (Ramzan)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-03-22",
+    "name": "Following day of Ramzan"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-03-27",
+    "name": "Sri Rama Navami"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-04-03",
+    "name": "Good Friday"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-04-05",
+    "name": "Babu Jagjivan Ram's Birthday"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-04-14",
+    "name": "Dr. B.R. Ambedkar's Birthday"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-05-27",
+    "name": "Eid-ul-Azha (Bakrid)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-06-26",
+    "name": "Shahadat Imam Hussain (R.A) 10th Moharam"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-08-10",
+    "name": "Bonalu"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-08-15",
+    "name": "Independence Day"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-08-26",
+    "name": "Eid Miladun Nabi"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-09-04",
+    "name": "Sri Krishna Astami"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-09-14",
+    "name": "Vinayaka Chavithi"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-10-02",
+    "name": "Mahatma Gandhi Jayanthi"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-10-18",
+    "name": "Saddula Bathukamma"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-10-20",
+    "name": "Vijaya Dasami / Dushera"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-10-21",
+    "name": "Following day of Vijaya Dasami"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-11-08",
+    "name": "Deepavali"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-11-24",
+    "name": "Kartika Purnima / Guru Nanak's Jayanthi"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-12-25",
+    "name": "Christmas"
+  },
+  {
+    "region": "Telangana",
+    "date": "2026-12-26",
+    "name": "Following day of Christmas (Boxing Day)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-01-15",
+    "name": "Uttarayana Punyakala, Makara Sankranti"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-01-26",
+    "name": "Republic Day"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-03-19",
+    "name": "Ugadi"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-03-21",
+    "name": "Khutub-E-Ramzan"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-03-31",
+    "name": "Mahaveera Jayanthi"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-04-03",
+    "name": "Good Friday"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-04-14",
+    "name": "Dr. B.R. Ambedkar Jayanthi"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-04-20",
+    "name": "Basava Jayanthi, Akshaya Tritiya"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-05-01",
+    "name": "May Day"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-05-28",
+    "name": "Bakrid"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-06-26",
+    "name": "Last Day of Moharam"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-08-15",
+    "name": "Independence Day"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-08-26",
+    "name": "Eid-Milad"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-09-14",
+    "name": "Varasiddhi Vinayaka Vrata"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-10-02",
+    "name": "Gandhi Jayanthi"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-10-20",
+    "name": "Mahanavami, Ayudhapooja"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-10-21",
+    "name": "Vijayadasami"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-11-10",
+    "name": "Balipadyami, Deepavali"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-11-27",
+    "name": "Kanakadasa Jayanthi"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2026-12-25",
+    "name": "Christmas"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-01-14",
+    "name": "Bhogi"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-01-15",
+    "name": "Makara Sankranti"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-01-16",
+    "name": "Kanuma"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-01-26",
+    "name": "Republic Day"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-02-15",
+    "name": "Maha Sivaratri"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-03-03",
+    "name": "Holi"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-03-19",
+    "name": "Ugadi"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-03-20",
+    "name": "Eid-ul-Fitr (Ramzan)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-03-27",
+    "name": "Sri Rama Navami"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-04-03",
+    "name": "Good Friday"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-04-05",
+    "name": "Babu Jagjivan Ram's Birthday"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-04-14",
+    "name": "Dr. B.R. Ambedkar's Birthday"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-05-27",
+    "name": "Eid-ul-Adha (Bakrid)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-06-26",
+    "name": "Moharrum (Shahadat Imam Hussain RA)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-08-15",
+    "name": "Independence Day"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-08-21",
+    "name": "Vara Lakshmi Vratham"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-08-25",
+    "name": "Milad-un-Nabi"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-09-04",
+    "name": "Sri Krishna Ashtami"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-09-14",
+    "name": "Vinayaka Chavithi"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-10-02",
+    "name": "Mahatma Gandhi Jayanthi"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-10-18",
+    "name": "Durgashtami"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-10-20",
+    "name": "Vijayadasami"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-11-08",
+    "name": "Deepavali"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2026-12-25",
+    "name": "Christmas"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-01-14",
+    "name": "Bhogi (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-01-15",
+    "name": "Sankranti / Pongal (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-01-26",
+    "name": "Republic Day (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-03-06",
+    "name": "Maha Shivaratri (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-03-10",
+    "name": "Eid-ul-Fitr (Ramzan) (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-03-11",
+    "name": "Following day of Ramzan (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-03-22",
+    "name": "Holi (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-03-26",
+    "name": "Good Friday (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-04-05",
+    "name": "Babu Jagjivan Ram's Birthday (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-04-07",
+    "name": "Ugadi (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-04-14",
+    "name": "Dr. B.R. Ambedkar's Birthday (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-04-15",
+    "name": "Sri Rama Navami (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-05-17",
+    "name": "Eid-ul-Azha (Bakrid) (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-06-16",
+    "name": "Shahadat Imam Hussain (R.A) 10th Moharam (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-08-15",
+    "name": "Independence Day / Eid Miladun Nabi (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-08-25",
+    "name": "Sri Krishna Astami (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-09-04",
+    "name": "Vinayaka Chavithi (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-10-02",
+    "name": "Mahatma Gandhi Jayanthi (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-10-07",
+    "name": "Saddula Bathukamma (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-10-09",
+    "name": "Vijaya Dasami / Dushera (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-10-10",
+    "name": "Following day of Vijaya Dasami (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-10-29",
+    "name": "Deepavali (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-11-14",
+    "name": "Kartika Purnima / Guru Nanak's Jayanthi (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-12-25",
+    "name": "Christmas (provisional)"
+  },
+  {
+    "region": "Telangana",
+    "date": "2027-12-26",
+    "name": "Following day of Christmas (Boxing Day) (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-01-15",
+    "name": "Uttarayana Punyakala, Makara Sankranti (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-01-26",
+    "name": "Republic Day (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-03-10",
+    "name": "Khutub-E-Ramzan (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-03-26",
+    "name": "Good Friday (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-04-07",
+    "name": "Ugadi (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-04-14",
+    "name": "Dr. B.R. Ambedkar Jayanthi (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-04-19",
+    "name": "Mahaveera Jayanthi (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-05-01",
+    "name": "May Day (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-05-17",
+    "name": "Bakrid (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-06-16",
+    "name": "Last Day of Moharam (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-08-15",
+    "name": "Independence Day / Eid-Milad (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-09-04",
+    "name": "Varasiddhi Vinayaka Vrata (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-10-02",
+    "name": "Gandhi Jayanthi (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-10-08",
+    "name": "Mahanavami, Ayudhapooja (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-10-09",
+    "name": "Vijayadasami (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-10-15",
+    "name": "Maharshi Valmiki Jayanthi (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-10-28",
+    "name": "Naraka Chaturdashi (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-10-30",
+    "name": "Balipadyami, Deepavali (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-11-01",
+    "name": "Kannada Rajyothsava (provisional)"
+  },
+  {
+    "region": "Karnataka",
+    "date": "2027-12-25",
+    "name": "Christmas (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-01-14",
+    "name": "Bhogi (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-01-15",
+    "name": "Makara Sankranti (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-01-16",
+    "name": "Kanuma (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-01-26",
+    "name": "Republic Day (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-03-06",
+    "name": "Maha Sivaratri (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-03-10",
+    "name": "Eid-ul-Fitr (Ramzan) (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-03-22",
+    "name": "Holi (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-03-26",
+    "name": "Good Friday (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-04-05",
+    "name": "Babu Jagjivan Ram's Birthday (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-04-07",
+    "name": "Ugadi (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-04-14",
+    "name": "Dr. B.R. Ambedkar's Birthday (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-04-15",
+    "name": "Sri Rama Navami (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-05-17",
+    "name": "Eid-ul-Adha (Bakrid) (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-06-16",
+    "name": "Moharrum (Shahadat Imam Hussain RA) (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-08-15",
+    "name": "Independence Day / Milad-un-Nabi (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-08-25",
+    "name": "Sri Krishna Ashtami (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-09-04",
+    "name": "Vinayaka Chavithi (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-10-02",
+    "name": "Mahatma Gandhi Jayanthi (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-10-07",
+    "name": "Durgashtami (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-10-09",
+    "name": "Vijayadasami (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-10-29",
+    "name": "Deepavali (provisional)"
+  },
+  {
+    "region": "Andhra Pradesh",
+    "date": "2027-12-25",
+    "name": "Christmas (provisional)"
+  }
+]
